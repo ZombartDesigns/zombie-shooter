@@ -1,0 +1,244 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=windows-1252"/>
+	<title></title>
+	<meta name="generator" content="LibreOffice 6.2.3.2 (Windows)"/>
+	<meta name="created" content="2026-02-01T20:44:06.511000000"/>
+	<meta name="changed" content="2026-02-01T20:44:27.194000000"/>
+	<style type="text/css">
+		@page { size: 21cm 29.7cm; margin: 2cm }
+		p { margin-bottom: 0.25cm; direction: ltr; color: #000000; line-height: 115%; orphans: 2; widows: 2; background: transparent }
+		p.western { font-family: "Liberation Serif", "Times New Roman", serif; font-size: 12pt; so-language: en-GB }
+		p.cjk { font-family: "NSimSun"; font-size: 12pt; so-language: zh-CN }
+		p.ctl { font-family: "Arial", sans-serif; font-size: 12pt; so-language: hi-IN }
+	</style>
+</head>
+<body lang="en-GB" text="#000000" link="#000080" vlink="#800000" dir="ltr"><p class="western" style="margin-bottom: 0cm; line-height: 100%">
+const config = {</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+type: Phaser.AUTO,</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+width: 800,</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+height: 600,</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+physics: {</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">    
+   default: 'arcade',</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">    
+   arcade: {</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">    
+       gravity: { y: 0 },</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">    
+       debug: false,</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">    
+   },</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+},</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+scene: {</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">    
+   preload: preload,</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">    
+   create: create,</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">    
+   update: update,</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+},</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">};</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">const
+game = new Phaser.Game(config);</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">let
+player;</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">let
+zombies;</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">let
+bullets;</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">let
+cursors;</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">let
+spaceKey;</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">let
+currentLevel = 1;</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">let
+zombieSpeed = 200; // Initial speed</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">let
+zombieSpawnRate = 1000; // Initial spawn rate in milliseconds</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">let
+levelDuration = 120; // Level duration in seconds</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">let
+levelStartTime;</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">let
+score = 0;</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">let
+scoreText;</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">function
+preload() {</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+// Load placeholder images</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+this.load.image('player',
+'https://via.placeholder.com/50/FFFFFF/000000?text=P');</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+this.load.image('zombie',
+'https://via.placeholder.com/50/FF0000/FFFFFF?text=Z');</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+this.load.image('bullet',
+'https://via.placeholder.com/5/FFFFFF/FFFFFF');</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">}</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">function
+create() {</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+player = this.physics.add.image(400, 550,
+'player').setCollideWorldBounds(true);</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+zombies = this.physics.add.group();</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+bullets = this.physics.add.group();</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+cursors = this.input.keyboard.createCursorKeys();</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+spaceKey =
+this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '32px',
+fill: '#fff' });</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+levelStartTime = this.time.now;</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+this.time.addEvent({ delay: zombieSpawnRate, callback: spawnZombie,
+callbackScope: this, loop: true });</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">}</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">function
+update() {</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+if (cursors.left.isDown) {</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">    
+   player.setVelocityX(-300);</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+} else if (cursors.right.isDown) {</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">    
+   player.setVelocityX(300);</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+} else {</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">    
+   player.setVelocityX(0);</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+}</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+if (spaceKey.isDown) {</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">    
+   shootBullet();</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+}</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+checkLevelUp();</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">}</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">function
+shootBullet() {</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+const bullet = bullets.create(player.x, player.y - 20, 'bullet');</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+bullet.setVelocityY(-500);</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">}</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">function
+spawnZombie() {</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+const zombieX = Phaser.Math.Between(0, config.width);</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+const zombie = zombies.create(zombieX, 0, 'zombie');</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+zombie.setVelocityY(zombieSpeed);</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">}</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">function
+checkLevelUp() {</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+if (this.time.now - levelStartTime &gt; levelDuration * 1000) {</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">    
+   currentLevel++;</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">    
+   zombieSpeed += 50; // Increase zombie speed</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">    
+   zombieSpawnRate = Math.max(500, zombieSpawnRate - 50); // Increase
+spawn rate</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">    
+   this.time.addEvent({ delay: zombieSpawnRate, callback:
+spawnZombie, callbackScope: this, loop: true });</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">    
+   levelStartTime = this.time.now;</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">    
+   updateScore();</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+}</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+// Check for collisions</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+this.physics.overlap(bullets, zombies, hitZombie, null, this);</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">}</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">function
+hitZombie(bullet, zombie) {</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+bullet.destroy();</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+zombie.destroy();</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+score += 10;</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+updateScore();</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">}</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">function
+updateScore() {</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">   
+scoreText.setText(`Score: ${score}`);</p>
+<p class="western" style="margin-bottom: 0cm; line-height: 100%">}</p>
+</body>
+</html>
