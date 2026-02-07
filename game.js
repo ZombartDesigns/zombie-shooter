@@ -113,7 +113,7 @@ class MainScene extends Phaser.Scene {
 
         zombie.setVelocityY(this.zombieSpeed);
 
-        zombie.setScale(0.05); // resize sprite
+        zombie.setScale(0.075); // resize sprite
     }
 
     hitZombie(bullet, zombie) {
@@ -169,6 +169,7 @@ const config = {
 };
 
 new Phaser.Game(config);
+
 
 
 
