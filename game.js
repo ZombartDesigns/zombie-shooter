@@ -25,6 +25,7 @@ class MainScene extends Phaser.Scene {
         // Player
         this.player = this.physics.add.image(400, 550, "player");
         this.player.setCollideWorldBounds(true);
+        this.player.setScale(0.1);
 
         // Groups
         this.zombies = this.physics.add.group();
@@ -168,6 +169,7 @@ const config = {
 };
 
 new Phaser.Game(config);
+
 
 
 
