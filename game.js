@@ -6,8 +6,7 @@ class MainScene extends Phaser.Scene {
     preload() {
         // Player
         this.load.image(
-            "player",
-            "https://via.placeholder.com/50/FFFFFF/000000?text=P"
+            "player", "assets/player.png"
         );
 
         // Zombie sprite
@@ -169,6 +168,7 @@ const config = {
 };
 
 new Phaser.Game(config);
+
 
 
 
