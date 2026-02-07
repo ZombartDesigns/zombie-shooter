@@ -12,8 +12,7 @@ class MainScene extends Phaser.Scene {
 
         // Zombie sprite
         this.load.image(
-            "zombie",
-            "https://i.imgur.com/6XKQpUu.png"
+            "zombie", "assets/zombie.png"
         );
 
         // Bullet
@@ -170,4 +169,5 @@ const config = {
 };
 
 new Phaser.Game(config);
+
 
