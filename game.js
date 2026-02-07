@@ -16,9 +16,9 @@ class MainScene extends Phaser.Scene {
         const canvasHeight = this.sys.game.config.height;
 
         // Add centered banner at top
-        this.add.image(canvasWidth / 2, 50, "banner")
-            .setOrigin(0.5, 0.5)
-            .setScale(1);
+        let banner = this.add.image(canvasWidth / 2, 0, "banner");
+        banner.setOrigin(0.5, 0);
+        banner.setScale(1);
 
         // Player
         this.player = this.physics.add.image(canvasWidth / 2, canvasHeight - 50, "player")
@@ -164,6 +164,7 @@ const config = {
 };
 
 new Phaser.Game(config);
+
 
 
 
