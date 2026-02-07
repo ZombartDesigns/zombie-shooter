@@ -1,45 +1,66 @@
-class GameScene extends Phaser.Scene {
+class MainScene extends Phaser.Scene {
     constructor() {
-        super("GameScene");
+        super("MainScene");
     }
 
     preload() {
-        this.load.image("player", "https://via.placeholder.com/50/FFFFFF/000000?text=P");
-        this.load.image("zombie", "https://via.placeholder.com/50/FF0000/FFFFFF?text=Z");
-        this.load.image("bullet", "https://via.placeholder.com/5/FFFFFF/FFFFFF");
+        // Player
+        this.load.image(
+            "player",
+            "https://via.placeholder.com/50/FFFFFF/000000?text=P"
+        );
+
+        // Zombie sprite
+        this.load.image(
+            "zombie",
+            "https://i.imgur.com/6XKQpUu.png"
+        );
+
+        // Bullet
+        this.load.image(
+            "bullet",
+            "https://via.placeholder.com/5/FFFFFF/FFFFFF"
+        );
     }
 
     create() {
+        // Player
         this.player = this.physics.add.image(400, 550, "player");
         this.player.setCollideWorldBounds(true);
 
+        // Groups
         this.zombies = this.physics.add.group();
         this.bullets = this.physics.add.group();
 
+        // Controls
         this.cursors = this.input.keyboard.createCursorKeys();
         this.space = this.input.keyboard.addKey(
             Phaser.Input.Keyboard.KeyCodes.SPACE
         );
 
+        // Game stats
         this.level = 1;
         this.score = 0;
 
-        this.zombieSpeed = 150;
-        this.spawnDelay = 1200;
+        // Difficulty
+        this.zombieSpeed = 60;     // START SLOW
+        this.spawnDelay = 1500;    // Slow spawn
 
-        this.levelTime = 120000; // 2 minutes
+        this.levelTime = 120000;   // 2 min per level
         this.levelStart = this.time.now;
 
+        // UI
         this.scoreText = this.add.text(10, 10, "Score: 0", {
-            fontSize: "24px",
+            fontSize: "22px",
             fill: "#ffffff"
         });
 
         this.levelText = this.add.text(10, 40, "Level: 1", {
-            fontSize: "24px",
+            fontSize: "22px",
             fill: "#ffffff"
         });
 
+        // Spawn timer
         this.spawnTimer = this.time.addEvent({
             delay: this.spawnDelay,
             callback: this.spawnZombie,
@@ -47,6 +68,7 @@ class GameScene extends Phaser.Scene {
             loop: true
         });
 
+        // Collisions
         this.physics.add.overlap(
             this.bullets,
             this.zombies,
@@ -57,7 +79,7 @@ class GameScene extends Phaser.Scene {
     }
 
     update() {
-        // Movement
+        // Move player
         if (this.cursors.left.isDown) {
             this.player.setVelocityX(-300);
         } else if (this.cursors.right.isDown) {
@@ -66,11 +88,12 @@ class GameScene extends Phaser.Scene {
             this.player.setVelocityX(0);
         }
 
-        // Shooting
+        // Shoot
         if (Phaser.Input.Keyboard.JustDown(this.space)) {
             this.shoot();
         }
 
+        // Level system
         this.checkLevel();
     }
 
@@ -85,11 +108,13 @@ class GameScene extends Phaser.Scene {
     }
 
     spawnZombie() {
-        let x = Phaser.Math.Between(25, 775);
+        let x = Phaser.Math.Between(40, 760);
 
-        let zombie = this.zombies.create(x, 0, "zombie");
+        let zombie = this.zombies.create(x, -50, "zombie");
 
         zombie.setVelocityY(this.zombieSpeed);
+
+        zombie.setScale(0.8); // resize sprite
     }
 
     hitZombie(bullet, zombie) {
@@ -97,18 +122,24 @@ class GameScene extends Phaser.Scene {
         zombie.destroy();
 
         this.score += 10;
+
         this.scoreText.setText("Score: " + this.score);
     }
 
     checkLevel() {
         if (this.time.now - this.levelStart > this.levelTime) {
-            this.level++;
 
+            this.level++;
             this.levelStart = this.time.now;
 
-            this.zombieSpeed += 40;
-            this.spawnDelay = Math.max(300, this.spawnDelay - 100);
+            // Increase difficulty
+            this.zombieSpeed += 30;          // Faster
+            this.spawnDelay = Math.max(
+                400,
+                this.spawnDelay - 150
+            ); // More frequent
 
+            // Restart spawner
             this.spawnTimer.remove();
 
             this.spawnTimer = this.time.addEvent({
@@ -131,12 +162,12 @@ const config = {
     physics: {
         default: "arcade",
         arcade: {
-            gravity: { y: 0 },
-            debug: false
+            gravity: { y: 0 }
         }
     },
 
-    scene: GameScene
+    scene: MainScene
 };
 
 new Phaser.Game(config);
+
