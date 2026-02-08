@@ -4,26 +4,25 @@ class MainScene extends Phaser.Scene {
     }
 
     preload() {
-        // Load assets
-        this.load.image("player", "assets/player.png");    // Player image
-        this.load.image("zombie", "assets/zombie.png");    // Zombie image
-        this.load.image("bullet", "https://via.placeholder.com/5/FFFFFF/FFFFFF"); // Bullet
-        this.load.image("banner", "assets/banner.png");    // Game banner
+        this.load.image("player", "assets/player.png");
+        this.load.image("zombie", "assets/zombie.png");
+        this.load.image("bullet", "https://via.placeholder.com/6/FFFFFF/FFFFFF");
     }
 
     create() {
-        const canvasWidth = this.sys.game.config.width;
-        const canvasHeight = this.sys.game.config.height;
-
-        // Add centered banner at top
-        let banner = this.add.image(canvasWidth / 2, 0, "banner");
-        banner.setOrigin(0.5, 0);
-        banner.setScale(1);
+        // Screen size
+        this.width = this.scale.width;
+        this.height = this.scale.height;
 
         // Player
-        this.player = this.physics.add.image(canvasWidth / 2, canvasHeight - 50, "player")
-            .setCollideWorldBounds(true)
-            .setScale(0.2);
+        this.player = this.physics.add.image(
+            this.width / 2,
+            this.height - 60,
+            "player"
+        );
+
+        this.player.setScale(0.2);
+        this.player.setCollideWorldBounds(true);
 
         // Groups
         this.zombies = this.physics.add.group();
@@ -31,32 +30,35 @@ class MainScene extends Phaser.Scene {
 
         // Controls
         this.cursors = this.input.keyboard.createCursorKeys();
-        this.space = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.space = this.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.SPACE
+        );
 
-        // Game stats
-        this.level = 1;
+        // Stats
         this.score = 0;
+        this.level = 1;
 
-        // Difficulty settings
-        this.zombieSpeed = 60;   // Start slow
-        this.spawnDelay = 1500;  // Zombie spawn delay
-        this.levelTime = 120000; // 2 minutes per level
+        // Difficulty
+        this.zombieSpeed = 80;
+        this.spawnDelay = 1500;
+
+        this.levelTime = 120000; // 2 min
         this.levelStart = this.time.now;
 
-        // UI text inside banner
-        this.scoreText = this.add.text(canvasWidth - 180, 30, "Score: 0", {
+        // UI (top left inside game)
+        this.scoreText = this.add.text(20, 20, "Score: 0", {
             fontSize: "22px",
             fill: "#ffffff",
             fontFamily: "monospace"
         });
 
-        this.levelText = this.add.text(canvasWidth - 180, 60, "Level: 1", {
+        this.levelText = this.add.text(20, 50, "Level: 1", {
             fontSize: "22px",
             fill: "#ffffff",
             fontFamily: "monospace"
         });
 
-        // Zombie spawner
+        // Spawner
         this.spawnTimer = this.time.addEvent({
             delay: this.spawnDelay,
             callback: this.spawnZombie,
@@ -65,59 +67,73 @@ class MainScene extends Phaser.Scene {
         });
 
         // Collisions
-        this.physics.add.overlap(this.bullets, this.zombies, this.hitZombie, null, this);
+        this.physics.add.overlap(
+            this.bullets,
+            this.zombies,
+            this.hitZombie,
+            null,
+            this
+        );
+
+        // Resize handling
+        this.scale.on("resize", this.resize, this);
+    }
+
+    resize(gameSize) {
+        this.width = gameSize.width;
+        this.height = gameSize.height;
+
+        this.player.y = this.height - 60;
     }
 
     update() {
-        // Player movement
+        // Movement
         if (this.cursors.left.isDown) {
-            this.player.setVelocityX(-300);
+            this.player.setVelocityX(-350);
         } else if (this.cursors.right.isDown) {
-            this.player.setVelocityX(300);
+            this.player.setVelocityX(350);
         } else {
             this.player.setVelocityX(0);
         }
 
-        // Shooting
+        // Shoot
         if (Phaser.Input.Keyboard.JustDown(this.space)) {
             this.shoot();
         }
 
-        // Animate zombies
         this.animateZombies();
-
-        // Level progression
         this.checkLevel();
     }
 
     shoot() {
-        let bullet = this.bullets.create(this.player.x, this.player.y - 20, "bullet");
-        bullet.setVelocityY(-500);
+        let bullet = this.bullets.create(
+            this.player.x,
+            this.player.y - 25,
+            "bullet"
+        );
+
+        bullet.setVelocityY(-600);
     }
 
     spawnZombie() {
-        const canvasWidth = this.sys.game.config.width;
-        let x = Phaser.Math.Between(50, canvasWidth - 50);
+        let x = Phaser.Math.Between(40, this.width - 40);
 
-        let zombie = this.zombies.create(x, 120, "zombie"); // Start below banner
+        let zombie = this.zombies.create(x, 80, "zombie");
+
+        zombie.setScale(0.2);
         zombie.setVelocityY(this.zombieSpeed);
-        zombie.setScale(0.2); // Scale adjusted
 
-        // For bobbing animation
-        zombie.startY = zombie.y;
-        zombie.waveOffset = Math.random() * 10;
+        zombie.wave = Math.random() * 10;
     }
 
     animateZombies() {
         this.zombies.children.iterate((zombie) => {
             if (!zombie) return;
-            zombie.waveOffset += 0.1;
 
-            // Bob up/down
-            zombie.y += Math.sin(zombie.waveOffset) * 0.5;
+            zombie.wave += 0.08;
 
-            // Sway left/right
-            zombie.rotation = Math.sin(zombie.waveOffset) * 0.05;
+            zombie.y += Math.sin(zombie.wave) * 0.4;
+            zombie.rotation = Math.sin(zombie.wave) * 0.04;
         });
     }
 
@@ -126,20 +142,23 @@ class MainScene extends Phaser.Scene {
         zombie.destroy();
 
         this.score += 10;
+
         this.scoreText.setText("Score: " + this.score);
     }
 
     checkLevel() {
         if (this.time.now - this.levelStart > this.levelTime) {
+
             this.level++;
             this.levelStart = this.time.now;
 
             // Increase difficulty
-            this.zombieSpeed += 25;
+            this.zombieSpeed += 30;
             this.spawnDelay = Math.max(400, this.spawnDelay - 150);
 
             // Restart spawner
             this.spawnTimer.remove();
+
             this.spawnTimer = this.time.addEvent({
                 delay: this.spawnDelay,
                 callback: this.spawnZombie,
@@ -152,24 +171,30 @@ class MainScene extends Phaser.Scene {
     }
 }
 
+// Phaser Config
 const config = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 600,
+
+    parent: "game-container",
+
+    width: window.innerWidth,
+    height: window.innerHeight - 150,
+
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+    },
+
     physics: {
         default: "arcade",
-        arcade: { gravity: { y: 0 } }
+        arcade: {
+            gravity: { y: 0 },
+            debug: false
+        }
     },
+
     scene: MainScene
 };
 
+// Start game
 new Phaser.Game(config);
-
-
-
-
-
-
-
-
-
