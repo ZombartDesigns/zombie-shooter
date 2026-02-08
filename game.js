@@ -1,194 +1,281 @@
-class MainScene extends Phaser.Scene {
-    constructor() {
-        super("MainScene");
-    }
+// ================= SETUP =================
 
-    preload() {
-        // Load assets
-        this.load.image("player", "assets/player.png");
-        this.load.image("zombie", "assets/zombie.png");
-        this.load.image("bullet", "https://via.placeholder.com/6/FFFFFF/FFFFFF");
-    }
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
 
-    create() {
-        // Game size
-        this.width = 800;
-        this.height = 600;
+const hudScore = document.getElementById("hud-score");
+const hudLevel = document.getElementById("hud-level");
 
-        // Player
-        this.player = this.physics.add.image(
-            this.width / 2,
-            this.height - 50,
-            "player"
-        );
 
-        this.player.setScale(0.2);
-        this.player.setCollideWorldBounds(true);
+// ================= RESIZE =================
 
-        // Groups
-        this.zombies = this.physics.add.group();
-        this.bullets = this.physics.add.group();
+function resizeCanvas() {
 
-        // Controls
-        this.cursors = this.input.keyboard.createCursorKeys();
-        this.space = this.input.keyboard.addKey(
-            Phaser.Input.Keyboard.KeyCodes.SPACE
-        );
+    const hudHeight = 70;
 
-        // Stats
-        this.score = 0;
-        this.level = 1;
-
-        // Difficulty
-        this.zombieSpeed = 80;
-        this.spawnDelay = 1500;
-
-        this.levelTime = 120000; // 2 minutes
-        this.levelStart = this.time.now;
-
-        // UI
-        this.scoreText = this.add.text(15, 15, "Score: 0", {
-            fontSize: "20px",
-            fill: "#ffffff",
-            fontFamily: "monospace"
-        });
-
-        this.levelText = this.add.text(15, 40, "Level: 1", {
-            fontSize: "20px",
-            fill: "#ffffff",
-            fontFamily: "monospace"
-        });
-
-        // Zombie spawner
-        this.spawnTimer = this.time.addEvent({
-            delay: this.spawnDelay,
-            callback: this.spawnZombie,
-            callbackScope: this,
-            loop: true
-        });
-
-        // Collisions
-        this.physics.add.overlap(
-            this.bullets,
-            this.zombies,
-            this.hitZombie,
-            null,
-            this
-        );
-    }
-
-    update() {
-        // Player movement
-        if (this.cursors.left.isDown) {
-            this.player.setVelocityX(-350);
-        } else if (this.cursors.right.isDown) {
-            this.player.setVelocityX(350);
-        } else {
-            this.player.setVelocityX(0);
-        }
-
-        // Shoot
-        if (Phaser.Input.Keyboard.JustDown(this.space)) {
-            this.shoot();
-        }
-
-        // Animate zombies
-        this.animateZombies();
-
-        // Level system
-        this.checkLevel();
-    }
-
-    shoot() {
-        let bullet = this.bullets.create(
-            this.player.x,
-            this.player.y - 25,
-            "bullet"
-        );
-
-        bullet.setVelocityY(-600);
-    }
-
-    spawnZombie() {
-        let x = Phaser.Math.Between(40, this.width - 40);
-
-        let zombie = this.zombies.create(x, 40, "zombie");
-
-        zombie.setScale(0.2);
-        zombie.setVelocityY(this.zombieSpeed);
-
-        // Animation offset
-        zombie.wave = Math.random() * 10;
-    }
-
-    animateZombies() {
-        this.zombies.children.iterate((zombie) => {
-            if (!zombie) return;
-
-            zombie.wave += 0.08;
-
-            zombie.y += Math.sin(zombie.wave) * 0.4;
-            zombie.rotation = Math.sin(zombie.wave) * 0.04;
-        });
-    }
-
-    hitZombie(bullet, zombie) {
-        bullet.destroy();
-        zombie.destroy();
-
-        this.score += 10;
-
-        this.scoreText.setText("Score: " + this.score);
-    }
-
-    checkLevel() {
-        if (this.time.now - this.levelStart > this.levelTime) {
-
-            this.level++;
-            this.levelStart = this.time.now;
-
-            // Increase difficulty
-            this.zombieSpeed += 30;
-            this.spawnDelay = Math.max(400, this.spawnDelay - 150);
-
-            // Restart spawner
-            this.spawnTimer.remove();
-
-            this.spawnTimer = this.time.addEvent({
-                delay: this.spawnDelay,
-                callback: this.spawnZombie,
-                callbackScope: this,
-                loop: true
-            });
-
-            this.levelText.setText("Level: " + this.level);
-        }
-    }
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight - hudHeight;
 }
 
-// Phaser Configuration
-const config = {
-    type: Phaser.AUTO,
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
 
-    parent: "game-container",
 
-    width: 800,
-    height: 600,
+// ================= IMAGES =================
 
-    scale: {
-        mode: Phaser.Scale.NONE
-    },
+const playerImg = new Image();
+playerImg.src = "assets/player.png";
 
-    physics: {
-        default: "arcade",
-        arcade: {
-            gravity: { y: 0 },
-            debug: false
-        }
-    },
+const zombieImg = new Image();
+zombieImg.src = "assets/zombie.png";
 
-    scene: MainScene
+
+// ================= GAME STATE =================
+
+let score = 0;
+let level = 1;
+
+let zombies = [];
+let bullets = [];
+
+let zombieSpeed = 1.2;
+
+
+// ================= PLAYER =================
+
+const player = {
+
+    x: 0,
+    y: 0,
+
+    width: 50,
+    height: 60,
+
+    speed: 6
 };
 
-// Start Game
-new Phaser.Game(config);
+function resetPlayer() {
+
+    player.x = canvas.width / 2 - player.width / 2;
+    player.y = canvas.height - player.height - 20;
+}
+
+resetPlayer();
+
+
+// ================= INPUT =================
+
+const keys = {};
+
+window.addEventListener("keydown", e => {
+    keys[e.key] = true;
+});
+
+window.addEventListener("keyup", e => {
+    keys[e.key] = false;
+});
+
+window.addEventListener("click", shoot);
+
+
+// ================= SHOOT =================
+
+function shoot() {
+
+    bullets.push({
+        x: player.x + player.width / 2 - 3,
+        y: player.y,
+        speed: 8
+    });
+}
+
+
+// ================= ZOMBIES =================
+
+function spawnZombie() {
+
+    const size = 45;
+
+    zombies.push({
+
+        x: Math.random() * (canvas.width - size),
+        y: -size,
+
+        width: size,
+        height: size,
+
+        speed: zombieSpeed
+    });
+}
+
+setInterval(spawnZombie, 1200);
+
+
+// ================= UPDATE =================
+
+function update() {
+
+    // Player movement
+
+    if (keys["a"] || keys["ArrowLeft"]) {
+        player.x -= player.speed;
+    }
+
+    if (keys["d"] || keys["ArrowRight"]) {
+        player.x += player.speed;
+    }
+
+    if (keys["w"] || keys["ArrowUp"]) {
+        player.y -= player.speed;
+    }
+
+    if (keys["s"] || keys["ArrowDown"]) {
+        player.y += player.speed;
+    }
+
+
+    // Boundaries
+
+    player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+    player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
+
+
+    // Bullets
+
+    bullets.forEach((b, i) => {
+
+        b.y -= b.speed;
+
+        if (b.y < 0) {
+            bullets.splice(i, 1);
+        }
+    });
+
+
+    // Zombies
+
+    zombies.forEach((z, zi) => {
+
+        z.y += z.speed;
+
+        // Game over if reach bottom
+
+        if (z.y > canvas.height) {
+            resetGame();
+        }
+
+
+        // Collision
+
+        bullets.forEach((b, bi) => {
+
+            if (
+                b.x < z.x + z.width &&
+                b.x + 6 > z.x &&
+                b.y < z.y + z.height &&
+                b.y + 10 > z.y
+            ) {
+
+                zombies.splice(zi, 1);
+                bullets.splice(bi, 1);
+
+                score += 10;
+
+
+                // Level up
+
+                if (score % 100 === 0) {
+
+                    level++;
+                    zombieSpeed += 0.4;
+                }
+            }
+        });
+    });
+
+
+    updateHUD();
+}
+
+
+// ================= DRAW =================
+
+function draw() {
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+    // Player
+
+    ctx.drawImage(
+        playerImg,
+        player.x,
+        player.y,
+        player.width,
+        player.height
+    );
+
+
+    // Bullets
+
+    ctx.fillStyle = "yellow";
+
+    bullets.forEach(b => {
+
+        ctx.fillRect(b.x, b.y, 6, 10);
+    });
+
+
+    // Zombies
+
+    zombies.forEach(z => {
+
+        ctx.drawImage(
+            zombieImg,
+            z.x,
+            z.y,
+            z.width,
+            z.height
+        );
+    });
+}
+
+
+// ================= HUD =================
+
+function updateHUD() {
+
+    hudScore.textContent = score;
+    hudLevel.textContent = level;
+}
+
+
+// ================= RESET =================
+
+function resetGame() {
+
+    alert("Game Over!");
+
+    score = 0;
+    level = 1;
+
+    zombieSpeed = 1.2;
+
+    zombies = [];
+    bullets = [];
+
+    resetPlayer();
+}
+
+
+// ================= LOOP =================
+
+function gameLoop() {
+
+    update();
+    draw();
+
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
