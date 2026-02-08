@@ -10,14 +10,13 @@ class MainScene extends Phaser.Scene {
     }
 
     create() {
-        // Screen size
         this.width = this.scale.width;
         this.height = this.scale.height;
 
         // Player
         this.player = this.physics.add.image(
             this.width / 2,
-            this.height - 60,
+            this.height - 50,
             "player"
         );
 
@@ -42,20 +41,18 @@ class MainScene extends Phaser.Scene {
         this.zombieSpeed = 80;
         this.spawnDelay = 1500;
 
-        this.levelTime = 120000; // 2 min
+        this.levelTime = 120000;
         this.levelStart = this.time.now;
 
-        // UI (top left inside game)
-        this.scoreText = this.add.text(20, 20, "Score: 0", {
-            fontSize: "22px",
-            fill: "#ffffff",
-            fontFamily: "monospace"
+        // UI
+        this.scoreText = this.add.text(15, 15, "Score: 0", {
+            fontSize: "20px",
+            fill: "#ffffff"
         });
 
-        this.levelText = this.add.text(20, 50, "Level: 1", {
-            fontSize: "22px",
-            fill: "#ffffff",
-            fontFamily: "monospace"
+        this.levelText = this.add.text(15, 40, "Level: 1", {
+            fontSize: "20px",
+            fill: "#ffffff"
         });
 
         // Spawner
@@ -83,11 +80,10 @@ class MainScene extends Phaser.Scene {
         this.width = gameSize.width;
         this.height = gameSize.height;
 
-        this.player.y = this.height - 60;
+        this.player.setPosition(this.width / 2, this.height - 50);
     }
 
     update() {
-        // Movement
         if (this.cursors.left.isDown) {
             this.player.setVelocityX(-350);
         } else if (this.cursors.right.isDown) {
@@ -96,7 +92,6 @@ class MainScene extends Phaser.Scene {
             this.player.setVelocityX(0);
         }
 
-        // Shoot
         if (Phaser.Input.Keyboard.JustDown(this.space)) {
             this.shoot();
         }
@@ -118,7 +113,7 @@ class MainScene extends Phaser.Scene {
     spawnZombie() {
         let x = Phaser.Math.Between(40, this.width - 40);
 
-        let zombie = this.zombies.create(x, 80, "zombie");
+        let zombie = this.zombies.create(x, 40, "zombie");
 
         zombie.setScale(0.2);
         zombie.setVelocityY(this.zombieSpeed);
@@ -142,7 +137,6 @@ class MainScene extends Phaser.Scene {
         zombie.destroy();
 
         this.score += 10;
-
         this.scoreText.setText("Score: " + this.score);
     }
 
@@ -152,11 +146,9 @@ class MainScene extends Phaser.Scene {
             this.level++;
             this.levelStart = this.time.now;
 
-            // Increase difficulty
             this.zombieSpeed += 30;
             this.spawnDelay = Math.max(400, this.spawnDelay - 150);
 
-            // Restart spawner
             this.spawnTimer.remove();
 
             this.spawnTimer = this.time.addEvent({
@@ -171,30 +163,27 @@ class MainScene extends Phaser.Scene {
     }
 }
 
-// Phaser Config
 const config = {
     type: Phaser.AUTO,
 
     parent: "game-container",
 
-    width: window.innerWidth,
-    height: window.innerHeight - 150,
+    width: 800,
+    height: 600,
 
     scale: {
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH
     },
 
     physics: {
         default: "arcade",
         arcade: {
-            gravity: { y: 0 },
-            debug: false
+            gravity: { y: 0 }
         }
     },
 
     scene: MainScene
 };
 
-// Start game
 new Phaser.Game(config);
