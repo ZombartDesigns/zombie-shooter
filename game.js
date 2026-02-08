@@ -4,14 +4,16 @@ class MainScene extends Phaser.Scene {
     }
 
     preload() {
+        // Load assets
         this.load.image("player", "assets/player.png");
         this.load.image("zombie", "assets/zombie.png");
         this.load.image("bullet", "https://via.placeholder.com/6/FFFFFF/FFFFFF");
     }
 
     create() {
-        this.width = this.scale.width;
-        this.height = this.scale.height;
+        // Game size
+        this.width = 800;
+        this.height = 600;
 
         // Player
         this.player = this.physics.add.image(
@@ -41,21 +43,23 @@ class MainScene extends Phaser.Scene {
         this.zombieSpeed = 80;
         this.spawnDelay = 1500;
 
-        this.levelTime = 120000;
+        this.levelTime = 120000; // 2 minutes
         this.levelStart = this.time.now;
 
         // UI
         this.scoreText = this.add.text(15, 15, "Score: 0", {
             fontSize: "20px",
-            fill: "#ffffff"
+            fill: "#ffffff",
+            fontFamily: "monospace"
         });
 
         this.levelText = this.add.text(15, 40, "Level: 1", {
             fontSize: "20px",
-            fill: "#ffffff"
+            fill: "#ffffff",
+            fontFamily: "monospace"
         });
 
-        // Spawner
+        // Zombie spawner
         this.spawnTimer = this.time.addEvent({
             delay: this.spawnDelay,
             callback: this.spawnZombie,
@@ -71,19 +75,10 @@ class MainScene extends Phaser.Scene {
             null,
             this
         );
-
-        // Resize handling
-        this.scale.on("resize", this.resize, this);
-    }
-
-    resize(gameSize) {
-        this.width = gameSize.width;
-        this.height = gameSize.height;
-
-        this.player.setPosition(this.width / 2, this.height - 50);
     }
 
     update() {
+        // Player movement
         if (this.cursors.left.isDown) {
             this.player.setVelocityX(-350);
         } else if (this.cursors.right.isDown) {
@@ -92,11 +87,15 @@ class MainScene extends Phaser.Scene {
             this.player.setVelocityX(0);
         }
 
+        // Shoot
         if (Phaser.Input.Keyboard.JustDown(this.space)) {
             this.shoot();
         }
 
+        // Animate zombies
         this.animateZombies();
+
+        // Level system
         this.checkLevel();
     }
 
@@ -118,6 +117,7 @@ class MainScene extends Phaser.Scene {
         zombie.setScale(0.2);
         zombie.setVelocityY(this.zombieSpeed);
 
+        // Animation offset
         zombie.wave = Math.random() * 10;
     }
 
@@ -137,6 +137,7 @@ class MainScene extends Phaser.Scene {
         zombie.destroy();
 
         this.score += 10;
+
         this.scoreText.setText("Score: " + this.score);
     }
 
@@ -146,9 +147,11 @@ class MainScene extends Phaser.Scene {
             this.level++;
             this.levelStart = this.time.now;
 
+            // Increase difficulty
             this.zombieSpeed += 30;
             this.spawnDelay = Math.max(400, this.spawnDelay - 150);
 
+            // Restart spawner
             this.spawnTimer.remove();
 
             this.spawnTimer = this.time.addEvent({
@@ -163,6 +166,7 @@ class MainScene extends Phaser.Scene {
     }
 }
 
+// Phaser Configuration
 const config = {
     type: Phaser.AUTO,
 
@@ -172,18 +176,19 @@ const config = {
     height: 600,
 
     scale: {
-        mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH
+        mode: Phaser.Scale.NONE
     },
 
     physics: {
         default: "arcade",
         arcade: {
-            gravity: { y: 0 }
+            gravity: { y: 0 },
+            debug: false
         }
     },
 
     scene: MainScene
 };
 
+// Start Game
 new Phaser.Game(config);
