@@ -1,73 +1,79 @@
 class MainScene extends Phaser.Scene {
+
     constructor() {
         super("MainScene");
     }
 
     preload() {
-        // Load assets
+
+        // Load images
+        this.load.image("background", "assets/background.png");
         this.load.image("player", "assets/player.png");
         this.load.image("zombie", "assets/zombie.png");
-        this.load.image("bullet", "https://via.placeholder.com/6/FFFFFF/FFFFFF");
+        this.load.image("bullet", "assets/bullet.png"); // optional
     }
 
     create() {
-        // Game size
-        this.width = 800;
-        this.height = 600;
 
-        // Player
-        this.player = this.physics.add.image(
-            this.width / 2,
-            this.height - 50,
+        // ================= BACKGROUND =================
+
+        this.background = this.add.image(
+            400,
+            300,
+            "background"
+        );
+
+        this.background.setDisplaySize(800, 600);
+
+
+        // ================= GAME STATE =================
+
+        this.score = 0;
+        this.level = 1;
+
+        this.zombieSpeed = 60;
+
+
+        // ================= PLAYER =================
+
+        this.player = this.physics.add.sprite(
+            400,
+            540,
             "player"
         );
 
         this.player.setScale(0.2);
         this.player.setCollideWorldBounds(true);
 
-        // Groups
-        this.zombies = this.physics.add.group();
+
+        // ================= CONTROLS =================
+
+        this.cursors = this.input.keyboard.createCursorKeys();
+
+        this.keys = this.input.keyboard.addKeys("W,A,S,D,SPACE");
+
+
+        // ================= BULLETS =================
+
         this.bullets = this.physics.add.group();
 
-        // Controls
-        this.cursors = this.input.keyboard.createCursorKeys();
-        this.space = this.input.keyboard.addKey(
-            Phaser.Input.Keyboard.KeyCodes.SPACE
-        );
 
-        // Stats
-        this.score = 0;
-        this.level = 1;
+        // ================= ZOMBIES =================
 
-        // Difficulty
-        this.zombieSpeed = 80;
-        this.spawnDelay = 1500;
+        this.zombies = this.physics.add.group();
 
-        this.levelTime = 120000; // 2 minutes
-        this.levelStart = this.time.now;
 
-        // UI
-        this.scoreText = this.add.text(15, 15, "Score: 0", {
-            fontSize: "20px",
-            fill: "#ffffff",
-            fontFamily: "monospace"
-        });
+        this.zombieTimer = this.time.addEvent({
 
-        this.levelText = this.add.text(15, 40, "Level: 1", {
-            fontSize: "20px",
-            fill: "#ffffff",
-            fontFamily: "monospace"
-        });
-
-        // Zombie spawner
-        this.spawnTimer = this.time.addEvent({
-            delay: this.spawnDelay,
+            delay: 1200,
             callback: this.spawnZombie,
             callbackScope: this,
             loop: true
         });
 
-        // Collisions
+
+        // ================= COLLISIONS =================
+
         this.physics.add.overlap(
             this.bullets,
             this.zombies,
@@ -75,114 +81,160 @@ class MainScene extends Phaser.Scene {
             null,
             this
         );
-    }
 
-    update() {
-        // Player movement
-        if (this.cursors.left.isDown) {
-            this.player.setVelocityX(-350);
-        } else if (this.cursors.right.isDown) {
-            this.player.setVelocityX(350);
-        } else {
-            this.player.setVelocityX(0);
-        }
 
-        // Shoot
-        if (Phaser.Input.Keyboard.JustDown(this.space)) {
-            this.shoot();
-        }
-
-        // Animate zombies
-        this.animateZombies();
-
-        // Level system
-        this.checkLevel();
-    }
-
-    shoot() {
-        let bullet = this.bullets.create(
-            this.player.x,
-            this.player.y - 25,
-            "bullet"
+        this.physics.add.overlap(
+            this.player,
+            this.zombies,
+            this.gameOver,
+            null,
+            this
         );
-
-        bullet.setVelocityY(-600);
     }
+
+
+    // ================= SPAWN ZOMBIE =================
 
     spawnZombie() {
-        let x = Phaser.Math.Between(40, this.width - 40);
 
-        let zombie = this.zombies.create(x, 40, "zombie");
+        const x = Phaser.Math.Between(50, 750);
+
+        const zombie = this.zombies.create(
+            x,
+            -50,
+            "zombie"
+        );
 
         zombie.setScale(0.2);
+
         zombie.setVelocityY(this.zombieSpeed);
-
-        // Animation offset
-        zombie.wave = Math.random() * 10;
     }
 
-    animateZombies() {
-        this.zombies.children.iterate((zombie) => {
-            if (!zombie) return;
 
-            zombie.wave += 0.08;
+    // ================= SHOOT =================
 
-            zombie.y += Math.sin(zombie.wave) * 0.4;
-            zombie.rotation = Math.sin(zombie.wave) * 0.04;
-        });
+    shoot() {
+
+        const bullet = this.bullets.create(
+            this.player.x,
+            this.player.y - 20,
+            null
+        );
+
+        bullet.setSize(6, 12);
+        bullet.body.setAllowGravity(false);
+
+        bullet.setVelocityY(-400);
     }
+
+
+    // ================= HIT =================
 
     hitZombie(bullet, zombie) {
+
         bullet.destroy();
         zombie.destroy();
 
         this.score += 10;
 
-        this.scoreText.setText("Score: " + this.score);
-    }
-
-    checkLevel() {
-        if (this.time.now - this.levelStart > this.levelTime) {
+        // Level up every 100 points
+        if (this.score % 100 === 0) {
 
             this.level++;
-            this.levelStart = this.time.now;
-
-            // Increase difficulty
-            this.zombieSpeed += 30;
-            this.spawnDelay = Math.max(400, this.spawnDelay - 150);
-
-            // Restart spawner
-            this.spawnTimer.remove();
-
-            this.spawnTimer = this.time.addEvent({
-                delay: this.spawnDelay,
-                callback: this.spawnZombie,
-                callbackScope: this,
-                loop: true
-            });
-
-            this.levelText.setText("Level: " + this.level);
+            this.zombieSpeed += 20;
         }
+    }
+
+
+    // ================= GAME OVER =================
+
+    gameOver() {
+
+        this.physics.pause();
+
+        this.player.setTint(0xff0000);
+
+        this.add.text(
+            400,
+            300,
+            "GAME OVER\nClick To Restart",
+            {
+                fontSize: "32px",
+                fill: "#ffffff",
+                align: "center"
+            }
+        ).setOrigin(0.5);
+
+
+        this.input.once("pointerdown", () => {
+            this.scene.restart();
+        });
+    }
+
+
+    // ================= UPDATE =================
+
+    update() {
+
+        // Movement
+
+        if (this.cursors.left.isDown || this.keys.A.isDown) {
+            this.player.setVelocityX(-200);
+        }
+        else if (this.cursors.right.isDown || this.keys.D.isDown) {
+            this.player.setVelocityX(200);
+        }
+        else {
+            this.player.setVelocityX(0);
+        }
+
+
+        if (this.cursors.up.isDown || this.keys.W.isDown) {
+            this.player.setVelocityY(-200);
+        }
+        else if (this.cursors.down.isDown || this.keys.S.isDown) {
+            this.player.setVelocityY(200);
+        }
+        else {
+            this.player.setVelocityY(0);
+        }
+
+
+        // Shoot
+
+        if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) {
+            this.shoot();
+        }
+
+
+        // Cleanup
+
+        this.bullets.children.each(b => {
+            if (b.y < -20) b.destroy();
+        });
+
+
+        this.zombies.children.each(z => {
+            if (z.y > 650) z.destroy();
+        });
     }
 }
 
-// Phaser Configuration
-const config = {
-    type: Phaser.AUTO,
 
-    parent: "game-container",
+// ================= GAME CONFIG =================
+
+const config = {
+
+    type: Phaser.AUTO,
 
     width: 800,
     height: 600,
 
-    scale: {
-        mode: Phaser.Scale.NONE
-    },
+    parent: "game-container",
 
     physics: {
         default: "arcade",
         arcade: {
-            gravity: { y: 0 },
             debug: false
         }
     },
@@ -190,5 +242,7 @@ const config = {
     scene: MainScene
 };
 
-// Start Game
+
+// ================= START GAME =================
+
 new Phaser.Game(config);
