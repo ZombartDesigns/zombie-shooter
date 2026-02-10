@@ -6,23 +6,72 @@ class MainScene extends Phaser.Scene {
 
     preload() {
 
-        // Load images
         this.load.image("background", "assets/background.png");
         this.load.image("player", "assets/player.png");
         this.load.image("zombie", "assets/zombie.png");
         this.load.image("bullet", "assets/bullet.png");
     }
 
+
+    // ================= OUTLINE SYSTEM =================
+
+    addOutline(sprite, size = 2, color = 0x000000) {
+
+        const offsets = [
+            { x: -size, y: 0 },
+            { x: size, y: 0 },
+            { x: 0, y: -size },
+            { x: 0, y: size }
+        ];
+
+        sprite.outlines = [];
+
+        offsets.forEach(o => {
+
+            const outline = this.add.image(
+                sprite.x + o.x,
+                sprite.y + o.y,
+                sprite.texture.key
+            );
+
+            outline.setTint(color);
+            outline.setDepth(sprite.depth - 1);
+            outline.setScale(sprite.scale);
+
+            sprite.outlines.push(outline);
+        });
+    }
+
+
+    updateOutline(sprite) {
+
+        if (!sprite.outlines) return;
+
+        const size = 2;
+
+        const offsets = [
+            { x: -size, y: 0 },
+            { x: size, y: 0 },
+            { x: 0, y: -size },
+            { x: 0, y: size }
+        ];
+
+        sprite.outlines.forEach((o, i) => {
+
+            o.x = sprite.x + offsets[i].x;
+            o.y = sprite.y + offsets[i].y;
+
+            o.rotation = sprite.rotation;
+            o.scale = sprite.scale;
+        });
+    }
+
+
     create() {
 
         // ================= BACKGROUND =================
 
-        this.background = this.add.image(
-            400,
-            300,
-            "background"
-        );
-
+        this.background = this.add.image(400, 300, "background");
         this.background.setDisplaySize(800, 600);
 
 
@@ -31,31 +80,39 @@ class MainScene extends Phaser.Scene {
         this.score = 0;
         this.level = 1;
 
-        this.zombieSpeed = 60;
+        this.combo = 0;
+        this.lastHitTime = 0;
+
+        this.zombieSpeed = 50;
+
+
+        // ================= CAMERA FX =================
+
+        this.cameras.main.setBounds(0, 0, 800, 600);
 
 
         // ================= PLAYER =================
 
-        this.player = this.physics.add.sprite(
-            400,
-            540,
-            "player"
-        );
+        this.player = this.physics.add.sprite(400, 540, "player");
 
         this.player.setScale(0.15);
         this.player.setCollideWorldBounds(true);
+
+        this.addOutline(this.player, 2);
 
 
         // ================= CONTROLS =================
 
         this.cursors = this.input.keyboard.createCursorKeys();
-
         this.keys = this.input.keyboard.addKeys("W,A,S,D,SPACE");
 
 
         // ================= BULLETS =================
 
-        this.bullets = this.physics.add.group();
+        this.bullets = this.physics.add.group({
+            defaultKey: "bullet",
+            maxSize: 50
+        });
 
 
         // ================= ZOMBIES =================
@@ -65,10 +122,24 @@ class MainScene extends Phaser.Scene {
 
         this.zombieTimer = this.time.addEvent({
 
-            delay: 2000,
+            delay: 1800,
             callback: this.spawnZombie,
             callbackScope: this,
             loop: true
+        });
+
+
+        // ================= PARTICLES (BLOOD) =================
+
+        this.blood = this.add.particles(0, 0, "bullet", {
+
+            speed: { min: 50, max: 200 },
+            scale: { start: 0.3, end: 0 },
+            alpha: { start: 1, end: 0 },
+            lifespan: 400,
+            quantity: 6,
+            tint: 0xff0000,
+            on: false
         });
 
 
@@ -99,15 +170,13 @@ class MainScene extends Phaser.Scene {
 
         const x = Phaser.Math.Between(50, 750);
 
-        const zombie = this.zombies.create(
-            x,
-            -50,
-            "zombie"
-        );
+        const zombie = this.zombies.create(x, -50, "zombie");
 
         zombie.setScale(0.15);
 
         zombie.setVelocityY(this.zombieSpeed);
+
+        this.addOutline(zombie, 2);
     }
 
 
@@ -117,7 +186,7 @@ class MainScene extends Phaser.Scene {
 
         const bullet = this.bullets.get(
             this.player.x,
-            this.player.y - 20
+            this.player.y - 25
         );
 
         if (!bullet) return;
@@ -130,23 +199,66 @@ class MainScene extends Phaser.Scene {
 
         bullet.body.enable = true;
 
-        bullet.setVelocityY(-500);
+        bullet.setVelocityY(-600);
+
+        this.addOutline(bullet, 1);
     }
+
 
     // ================= HIT =================
 
     hitZombie(bullet, zombie) {
 
+        // Blood effect
+        this.blood.emitParticleAt(zombie.x, zombie.y);
+
+        // Screen shake
+        this.cameras.main.shake(80, 0.01);
+
+        // Flash zombie
+        zombie.setTint(0xffffff);
+
+        this.time.delayedCall(80, () => {
+            if (zombie) zombie.clearTint();
+        });
+
+
+        // Combo system
+        const now = this.time.now;
+
+        if (now - this.lastHitTime < 600) {
+            this.combo++;
+        } else {
+            this.combo = 1;
+        }
+
+        this.lastHitTime = now;
+
+
         bullet.destroy();
         zombie.destroy();
 
-        this.score += 10;
 
-        // Level up every 100 points
-        if (this.score % 100 === 0) {
+        // Remove outlines
+        if (bullet.outlines) bullet.outlines.forEach(o => o.destroy());
+        if (zombie.outlines) zombie.outlines.forEach(o => o.destroy());
+
+
+        // Score
+        this.score += 10 * this.combo;
+
+
+        // Level up
+        if (this.score % 150 === 0) {
 
             this.level++;
-            this.zombieSpeed += 20;
+
+            this.zombieSpeed += 15;
+
+            this.zombieTimer.delay = Math.max(
+                500,
+                this.zombieTimer.delay - 150
+            );
         }
     }
 
@@ -158,6 +270,9 @@ class MainScene extends Phaser.Scene {
         this.physics.pause();
 
         this.player.setTint(0xff0000);
+
+        this.cameras.main.fade(500, 0, 0, 0);
+
 
         this.add.text(
             400,
@@ -181,13 +296,13 @@ class MainScene extends Phaser.Scene {
 
     update() {
 
-        // Movement
+        // ================= MOVEMENT =================
 
         if (this.cursors.left.isDown || this.keys.A.isDown) {
-            this.player.setVelocityX(-200);
+            this.player.setVelocityX(-220);
         }
         else if (this.cursors.right.isDown || this.keys.D.isDown) {
-            this.player.setVelocityX(200);
+            this.player.setVelocityX(220);
         }
         else {
             this.player.setVelocityX(0);
@@ -195,35 +310,62 @@ class MainScene extends Phaser.Scene {
 
 
         if (this.cursors.up.isDown || this.keys.W.isDown) {
-            this.player.setVelocityY(-200);
+            this.player.setVelocityY(-220);
         }
         else if (this.cursors.down.isDown || this.keys.S.isDown) {
-            this.player.setVelocityY(200);
+            this.player.setVelocityY(220);
         }
         else {
             this.player.setVelocityY(0);
         }
 
 
-        // Shoot
+        // ================= SHOOT =================
 
         if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) {
             this.shoot();
         }
 
 
-        // Cleanup
+        // ================= CLEANUP =================
 
         this.bullets.children.each(b => {
-            if (b.y < -20) b.destroy();
+
+            if (b.active && b.y < -30) {
+
+                b.setActive(false);
+                b.setVisible(false);
+
+                if (b.outlines) b.outlines.forEach(o => o.destroy());
+            }
         });
 
 
         this.zombies.children.each(z => {
-            if (z.y > 650) z.destroy();
+
+            if (z.y > 650) {
+
+                if (z.outlines) z.outlines.forEach(o => o.destroy());
+
+                z.destroy();
+            }
+        });
+
+
+        // ================= OUTLINE UPDATES =================
+
+        this.updateOutline(this.player);
+
+        this.zombies.children.each(z => {
+            this.updateOutline(z);
+        });
+
+        this.bullets.children.each(b => {
+            this.updateOutline(b);
         });
     }
 }
+
 
 
 // ================= GAME CONFIG =================
@@ -251,9 +393,3 @@ const config = {
 // ================= START GAME =================
 
 new Phaser.Game(config);
-
-
-
-
-
-
