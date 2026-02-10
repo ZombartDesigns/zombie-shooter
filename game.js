@@ -195,7 +195,7 @@ class MainScene extends Phaser.Scene {
         bullet.setVisible(true);
 
         bullet.setScale(0.2);
-        bullet.setAngle(-90);
+        bullet.setAngle(0);
 
         bullet.body.enable = true;
 
@@ -393,3 +393,4 @@ const config = {
 // ================= START GAME =================
 
 new Phaser.Game(config);
+
