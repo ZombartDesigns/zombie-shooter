@@ -42,7 +42,7 @@ class MainScene extends Phaser.Scene {
             "player"
         );
 
-        this.player.setScale(0.1);
+        this.player.setScale(0.15);
         this.player.setCollideWorldBounds(true);
 
 
@@ -105,7 +105,7 @@ class MainScene extends Phaser.Scene {
             "zombie"
         );
 
-        zombie.setScale(0.1);
+        zombie.setScale(0.15);
 
         zombie.setVelocityY(this.zombieSpeed);
     }
@@ -246,4 +246,5 @@ const config = {
 // ================= START GAME =================
 
 new Phaser.Game(config);
+
 
