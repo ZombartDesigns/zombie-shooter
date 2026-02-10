@@ -65,7 +65,7 @@ class MainScene extends Phaser.Scene {
 
         this.zombieTimer = this.time.addEvent({
 
-            delay: 1200,
+            delay: 1500,
             callback: this.spawnZombie,
             callbackScope: this,
             loop: true
@@ -246,5 +246,6 @@ const config = {
 // ================= START GAME =================
 
 new Phaser.Game(config);
+
 
 
