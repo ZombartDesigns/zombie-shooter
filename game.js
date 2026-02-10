@@ -115,18 +115,23 @@ class MainScene extends Phaser.Scene {
 
     shoot() {
 
-        const bullet = this.bullets.create(
+        const bullet = this.bullets.get(
             this.player.x,
-            this.player.y - 20,
-            null
+            this.player.y - 20
         );
 
-        bullet.setSize(6, 12);
-        bullet.body.setAllowGravity(false);
+        if (!bullet) return;
 
-        bullet.setVelocityY(-400);
+        bullet.setActive(true);
+        bullet.setVisible(true);
+
+        bullet.setScale(0.2);
+        bullet.setAngle(-90);
+
+        bullet.body.enable = true;
+
+        bullet.setVelocityY(-500);
     }
-
 
     // ================= HIT =================
 
@@ -246,6 +251,7 @@ const config = {
 // ================= START GAME =================
 
 new Phaser.Game(config);
+
 
 
 
