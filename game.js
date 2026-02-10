@@ -10,7 +10,7 @@ class MainScene extends Phaser.Scene {
         this.load.image("background", "assets/background.png");
         this.load.image("player", "assets/player.png");
         this.load.image("zombie", "assets/zombie.png");
-        this.load.image("bullet", "assets/bullet.png"); // optional
+        this.load.image("bullet", "assets/bullet.png");
     }
 
     create() {
@@ -246,6 +246,7 @@ const config = {
 // ================= START GAME =================
 
 new Phaser.Game(config);
+
 
 
 
