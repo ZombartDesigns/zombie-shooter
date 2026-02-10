@@ -6,10 +6,16 @@ class MainScene extends Phaser.Scene {
 
     preload() {
 
-        this.load.image("background", "assets/background.png");
+        // Backgrounds
+        this.load.image("bg1", "assets/background1.png");
+        this.load.image("bg2", "assets/background2.png");
+        this.load.image("bg3", "assets/background3.png");
+
+        // Sprites
         this.load.image("player", "assets/player.png");
         this.load.image("zombie", "assets/zombie.png");
         this.load.image("bullet", "assets/bullet.png");
+        this.load.image("heart", "assets/heart.png");
     }
 
 
@@ -69,26 +75,65 @@ class MainScene extends Phaser.Scene {
 
     create() {
 
+        // ================= LEVEL DATA =================
+
+        this.backgrounds = ["bg1", "bg2", "bg3"];
+
+        this.level = 1;
+        this.maxLevels = 100;
+
+
         // ================= BACKGROUND =================
 
-        this.background = this.add.image(400, 300, "background");
-        this.background.setDisplaySize(800, 600);
+        this.bg = this.add.image(400, 300, this.backgrounds[0]);
+        this.bg.setDisplaySize(800, 600);
 
 
         // ================= GAME STATE =================
 
         this.score = 0;
-        this.level = 1;
 
-        this.combo = 0;
-        this.lastHitTime = 0;
+        this.lives = 5;
 
-        this.zombieSpeed = 50;
+        this.zombieSpeed = 45;
+
+        this.killsThisLevel = 0;
+        this.killsToAdvance = 20;
 
 
-        // ================= CAMERA FX =================
+        // ================= HUD =================
 
-        this.cameras.main.setBounds(0, 0, 800, 600);
+        this.scoreText = this.add.text(10, 10, "Score: 0", {
+            fontSize: "18px",
+            fill: "#fff",
+            stroke: "#000",
+            strokeThickness: 3
+        }).setDepth(1000);
+
+        this.levelText = this.add.text(10, 35, "Level: 1", {
+            fontSize: "18px",
+            fill: "#fff",
+            stroke: "#000",
+            strokeThickness: 3
+        }).setDepth(1000);
+
+
+        // Hearts
+        this.hearts = [];
+
+        for (let i = 0; i < 5; i++) {
+
+            const heart = this.add.image(
+                650 + i * 30,
+                22,
+                "heart"
+            );
+
+            heart.setScale(0.5);
+            heart.setDepth(1000);
+
+            this.hearts.push(heart);
+        }
 
 
         // ================= PLAYER =================
@@ -111,7 +156,7 @@ class MainScene extends Phaser.Scene {
 
         this.bullets = this.physics.add.group({
             defaultKey: "bullet",
-            maxSize: 50
+            maxSize: 40
         });
 
 
@@ -129,20 +174,6 @@ class MainScene extends Phaser.Scene {
         });
 
 
-        // ================= PARTICLES (BLOOD) =================
-
-        this.blood = this.add.particles(0, 0, "bullet", {
-
-            speed: { min: 50, max: 200 },
-            scale: { start: 0.3, end: 0 },
-            alpha: { start: 1, end: 0 },
-            lifespan: 400,
-            quantity: 6,
-            tint: 0xff0000,
-            on: false
-        });
-
-
         // ================= COLLISIONS =================
 
         this.physics.add.overlap(
@@ -157,7 +188,7 @@ class MainScene extends Phaser.Scene {
         this.physics.add.overlap(
             this.player,
             this.zombies,
-            this.gameOver,
+            this.hitPlayer,
             null,
             this
         );
@@ -167,6 +198,8 @@ class MainScene extends Phaser.Scene {
     // ================= SPAWN ZOMBIE =================
 
     spawnZombie() {
+
+        if (this.levelPaused) return;
 
         const x = Phaser.Math.Between(50, 750);
 
@@ -183,6 +216,8 @@ class MainScene extends Phaser.Scene {
     // ================= SHOOT =================
 
     shoot() {
+
+        if (this.levelPaused) return;
 
         const bullet = this.bullets.get(
             this.player.x,
@@ -205,61 +240,106 @@ class MainScene extends Phaser.Scene {
     }
 
 
-    // ================= HIT =================
+    // ================= HIT ZOMBIE =================
 
     hitZombie(bullet, zombie) {
-
-        // Blood effect
-        this.blood.emitParticleAt(zombie.x, zombie.y);
-
-        // Screen shake
-        this.cameras.main.shake(80, 0.01);
-
-        // Flash zombie
-        zombie.setTint(0xffffff);
-
-        this.time.delayedCall(80, () => {
-            if (zombie) zombie.clearTint();
-        });
-
-
-        // Combo system
-        const now = this.time.now;
-
-        if (now - this.lastHitTime < 600) {
-            this.combo++;
-        } else {
-            this.combo = 1;
-        }
-
-        this.lastHitTime = now;
-
 
         bullet.destroy();
         zombie.destroy();
 
-
-        // Remove outlines
         if (bullet.outlines) bullet.outlines.forEach(o => o.destroy());
         if (zombie.outlines) zombie.outlines.forEach(o => o.destroy());
 
 
         // Score
-        this.score += 10 * this.combo;
+        this.score += 10;
+        this.killsThisLevel++;
+
+        this.scoreText.setText("Score: " + this.score);
 
 
-        // Level up
-        if (this.score % 150 === 0) {
+        // Level Progress
+        if (this.killsThisLevel >= this.killsToAdvance) {
+
+            this.nextLevel();
+        }
+    }
+
+
+    // ================= PLAYER HIT =================
+
+    hitPlayer(player, zombie) {
+
+        zombie.destroy();
+
+        if (zombie.outlines) zombie.outlines.forEach(o => o.destroy());
+
+
+        this.lives--;
+
+        if (this.hearts[this.lives]) {
+            this.hearts[this.lives].setVisible(false);
+        }
+
+
+        this.cameras.main.shake(200, 0.02);
+
+
+        if (this.lives <= 0) {
+            this.gameOver();
+        }
+    }
+
+
+    // ================= NEXT LEVEL =================
+
+    nextLevel() {
+
+        this.levelPaused = true;
+
+        this.zombies.clear(true, true);
+
+        this.zombieTimer.paused = true;
+
+
+        const msg = this.add.text(
+            400,
+            300,
+            "LEVEL " + this.level + " COMPLETE!",
+            {
+                fontSize: "32px",
+                fill: "#fff",
+                stroke: "#000",
+                strokeThickness: 4
+            }
+        ).setOrigin(0.5).setDepth(2000);
+
+
+        this.time.delayedCall(2000, () => {
+
+            msg.destroy();
 
             this.level++;
 
+            this.levelText.setText("Level: " + this.level);
+
+            this.killsThisLevel = 0;
+
             this.zombieSpeed += 15;
 
-            this.zombieTimer.delay = Math.max(
-                500,
-                this.zombieTimer.delay - 150
-            );
-        }
+            // Change background
+            const bgKey =
+                this.backgrounds[
+                    (this.level - 1) % this.backgrounds.length
+                ];
+
+            this.bg.setTexture(bgKey);
+
+
+            this.levelPaused = false;
+
+            this.zombieTimer.paused = false;
+        });
     }
 
 
@@ -269,18 +349,13 @@ class MainScene extends Phaser.Scene {
 
         this.physics.pause();
 
-        this.player.setTint(0xff0000);
-
-        this.cameras.main.fade(500, 0, 0, 0);
-
-
         this.add.text(
             400,
             300,
             "GAME OVER\nClick To Restart",
             {
                 fontSize: "32px",
-                fill: "#ffffff",
+                fill: "#fff",
                 align: "center"
             }
         ).setOrigin(0.5);
@@ -295,6 +370,9 @@ class MainScene extends Phaser.Scene {
     // ================= UPDATE =================
 
     update() {
+
+        if (this.levelPaused) return;
+
 
         // ================= MOVEMENT =================
 
@@ -352,17 +430,12 @@ class MainScene extends Phaser.Scene {
         });
 
 
-        // ================= OUTLINE UPDATES =================
+        // ================= OUTLINES =================
 
         this.updateOutline(this.player);
 
-        this.zombies.children.each(z => {
-            this.updateOutline(z);
-        });
-
-        this.bullets.children.each(b => {
-            this.updateOutline(b);
-        });
+        this.zombies.children.each(z => this.updateOutline(z));
+        this.bullets.children.each(b => this.updateOutline(b));
     }
 }
 
@@ -381,16 +454,11 @@ const config = {
 
     physics: {
         default: "arcade",
-        arcade: {
-            debug: false
-        }
+        arcade: { debug: false }
     },
 
     scene: MainScene
 };
 
 
-// ================= START GAME =================
-
 new Phaser.Game(config);
-
