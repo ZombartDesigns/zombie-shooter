@@ -37,8 +37,7 @@ class MainScene extends Phaser.Scene {
             Math.sin(angle) * this.zombieSpeed
         );
 
-        // Stay upright
-        zombie.setRotation(0);
+        zombie.setRotation(0); // stay upright
     }
 
 
@@ -49,7 +48,6 @@ class MainScene extends Phaser.Scene {
         this.backgrounds = ["bg1", "bg2", "bg3"];
         this.level = 1;
         this.maxLevels = 100;
-
         this.levelPaused = false;
 
 
@@ -97,11 +95,11 @@ class MainScene extends Phaser.Scene {
 
         // ================= PLAYER =================
 
-        this.player = this.physics.add.sprite(400, 540, "player");
+        this.player = this.physics.add.sprite(400, 520, "player");
         this.player.setScale(0.15);
         this.player.setCollideWorldBounds(true);
 
-        // ✨ Yellow glow
+        // Glow
         this.player.postFX.addGlow(0xffff00, 4, 0, false, 0.2, 8);
 
 
@@ -110,9 +108,11 @@ class MainScene extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
         this.keys = this.input.keyboard.addKeys("W,A,S,D,SPACE");
 
-        // 🎮 Controller support
+        // Controller
+        this.gamepad = null;
         this.input.gamepad.once("connected", pad => {
             this.gamepad = pad;
+            console.log("Gamepad connected");
         });
 
 
@@ -165,10 +165,8 @@ class MainScene extends Phaser.Scene {
         const x = Phaser.Math.Between(50, 750);
 
         const zombie = this.zombies.create(x, -50, "zombie");
-
         zombie.setScale(0.15);
 
-        // 🔴 Red glow
         zombie.postFX.addGlow(0xff0000, 4, 0, false, 0.2, 8);
     }
 
@@ -191,7 +189,6 @@ class MainScene extends Phaser.Scene {
         bullet.setScale(0.2);
         bullet.setVelocityY(-600);
 
-        // ✨ Yellow glow
         bullet.postFX.clear();
         bullet.postFX.addGlow(0xffff00, 2, 0, false, 0.2, 6);
     }
@@ -222,6 +219,7 @@ class MainScene extends Phaser.Scene {
         zombie.destroy();
 
         this.lives--;
+
         if (this.hearts[this.lives]) {
             this.hearts[this.lives].setVisible(false);
         }
@@ -239,11 +237,14 @@ class MainScene extends Phaser.Scene {
     nextLevel() {
 
         this.levelPaused = true;
+
         this.zombies.clear(true, true);
         this.zombieTimer.paused = true;
 
-        const msg = this.add.text(400, 300,
-            "LEVEL " + this.level + " COMPLETE!",
+        const msg = this.add.text(
+            400,
+            300,
+            `LEVEL ${this.level} COMPLETE!`,
             {
                 fontSize: "32px",
                 fill: "#fff",
@@ -283,7 +284,9 @@ class MainScene extends Phaser.Scene {
 
         this.physics.pause();
 
-        this.add.text(400, 300,
+        this.add.text(
+            400,
+            300,
             "GAME OVER\nClick To Restart",
             {
                 fontSize: "32px",
@@ -302,32 +305,39 @@ class MainScene extends Phaser.Scene {
 
     update() {
 
-        if (this.levelPaused) return;
+        if (this.levelPaused) {
+            this.player.setVelocity(0, 0);
+            return;
+        }
 
         let moveX = 0;
         let moveY = 0;
 
-        // ⌨️ Keyboard
+        // Keyboard movement
         if (this.cursors.left.isDown || this.keys.A.isDown) moveX = -1;
         else if (this.cursors.right.isDown || this.keys.D.isDown) moveX = 1;
 
         if (this.cursors.up.isDown || this.keys.W.isDown) moveY = -1;
         else if (this.cursors.down.isDown || this.keys.S.isDown) moveY = 1;
 
-        // 🎮 Controller
+        this.player.setVelocity(moveX * 220, moveY * 220);
+
+        // Controller movement (only if connected)
         if (this.gamepad) {
 
             const pad = this.gamepad;
 
-            moveX = Math.abs(pad.leftStick.x) > 0.2 ? pad.leftStick.x : moveX;
-            moveY = Math.abs(pad.leftStick.y) > 0.2 ? pad.leftStick.y : moveY;
+            const lx = Math.abs(pad.leftStick.x) > 0.2 ? pad.leftStick.x : 0;
+            const ly = Math.abs(pad.leftStick.y) > 0.2 ? pad.leftStick.y : 0;
+
+            if (lx !== 0 || ly !== 0) {
+                this.player.setVelocity(lx * 220, ly * 220);
+            }
 
             if (pad.A) this.shoot();
         }
 
-        this.player.setVelocity(moveX * 220, moveY * 220);
-
-        // ⌨️ Shoot
+        // Keyboard shoot
         if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) {
             this.shoot();
         }
@@ -337,7 +347,7 @@ class MainScene extends Phaser.Scene {
             this.moveZombieTowardsPlayer(z);
         });
 
-        // Cleanup bullets
+        // Bullet cleanup
         this.bullets.children.each(b => {
             if (b.active && b.y < -30) {
                 b.destroy();
