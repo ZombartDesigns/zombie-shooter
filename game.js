@@ -18,7 +18,6 @@ class MainScene extends Phaser.Scene {
         this.load.image("heart", "assets/heart.png");
     }
 
-
     // ================= ZOMBIE AI =================
 
     moveZombieTowardsPlayer(zombie) {
@@ -40,23 +39,19 @@ class MainScene extends Phaser.Scene {
         zombie.setRotation(0); // stay upright
     }
 
-
     create() {
 
         // ================= LEVEL DATA =================
 
         this.backgrounds = ["bg1", "bg2", "bg3"];
         this.level = 1;
-        this.maxLevels = 100;
         this.levelPaused = false;
-
 
         // ================= BACKGROUND =================
 
         this.bg = this.add.image(400, 300, "bg1");
         this.bg.setDisplaySize(800, 600);
         this.bg.setDepth(-100);
-
 
         // ================= GAME STATE =================
 
@@ -66,7 +61,6 @@ class MainScene extends Phaser.Scene {
 
         this.killsThisLevel = 0;
         this.killsToAdvance = 20;
-
 
         // ================= HUD =================
 
@@ -86,12 +80,11 @@ class MainScene extends Phaser.Scene {
 
         this.hearts = [];
         for (let i = 0; i < 5; i++) {
-            const heart = this.add.image(650 + i * 30, 22, "heart")
-                .setScale(0.5)
-                .setDepth(1000);
+            const heart = this.add.image(650 + i * 30, 22, "heart");
+            heart.setScale(0.5);
+            heart.setDepth(1000);
             this.hearts.push(heart);
         }
-
 
         // ================= PLAYER =================
 
@@ -102,19 +95,10 @@ class MainScene extends Phaser.Scene {
         // Glow
         this.player.postFX.addGlow(0xffff00, 4, 0, false, 0.2, 8);
 
-
         // ================= CONTROLS =================
 
         this.cursors = this.input.keyboard.createCursorKeys();
         this.keys = this.input.keyboard.addKeys("W,A,S,D,SPACE");
-
-        // Controller
-        this.gamepad = null;
-        this.input.gamepad.once("connected", pad => {
-            this.gamepad = pad;
-            console.log("Gamepad connected");
-        });
-
 
         // ================= BULLETS =================
 
@@ -122,7 +106,6 @@ class MainScene extends Phaser.Scene {
             defaultKey: "bullet",
             maxSize: 40
         });
-
 
         // ================= ZOMBIES =================
 
@@ -134,7 +117,6 @@ class MainScene extends Phaser.Scene {
             callbackScope: this,
             loop: true
         });
-
 
         // ================= COLLISIONS =================
 
@@ -155,7 +137,6 @@ class MainScene extends Phaser.Scene {
         );
     }
 
-
     // ================= SPAWN ZOMBIE =================
 
     spawnZombie() {
@@ -163,13 +144,12 @@ class MainScene extends Phaser.Scene {
         if (this.levelPaused) return;
 
         const x = Phaser.Math.Between(50, 750);
-
         const zombie = this.zombies.create(x, -50, "zombie");
+
         zombie.setScale(0.15);
 
         zombie.postFX.addGlow(0xff0000, 4, 0, false, 0.2, 8);
     }
-
 
     // ================= SHOOT =================
 
@@ -193,7 +173,6 @@ class MainScene extends Phaser.Scene {
         bullet.postFX.addGlow(0xffff00, 2, 0, false, 0.2, 6);
     }
 
-
     // ================= HIT ZOMBIE =================
 
     hitZombie(bullet, zombie) {
@@ -210,7 +189,6 @@ class MainScene extends Phaser.Scene {
             this.nextLevel();
         }
     }
-
 
     // ================= PLAYER HIT =================
 
@@ -231,13 +209,11 @@ class MainScene extends Phaser.Scene {
         }
     }
 
-
     // ================= NEXT LEVEL =================
 
     nextLevel() {
 
         this.levelPaused = true;
-
         this.zombies.clear(true, true);
         this.zombieTimer.paused = true;
 
@@ -277,7 +253,6 @@ class MainScene extends Phaser.Scene {
         });
     }
 
-
     // ================= GAME OVER =================
 
     gameOver() {
@@ -300,7 +275,6 @@ class MainScene extends Phaser.Scene {
         });
     }
 
-
     // ================= UPDATE =================
 
     update() {
@@ -310,34 +284,19 @@ class MainScene extends Phaser.Scene {
             return;
         }
 
-        let moveX = 0;
-        let moveY = 0;
+        let vx = 0;
+        let vy = 0;
 
         // Keyboard movement
-        if (this.cursors.left.isDown || this.keys.A.isDown) moveX = -1;
-        else if (this.cursors.right.isDown || this.keys.D.isDown) moveX = 1;
+        if (this.cursors.left.isDown || this.keys.A.isDown) vx = -220;
+        else if (this.cursors.right.isDown || this.keys.D.isDown) vx = 220;
 
-        if (this.cursors.up.isDown || this.keys.W.isDown) moveY = -1;
-        else if (this.cursors.down.isDown || this.keys.S.isDown) moveY = 1;
+        if (this.cursors.up.isDown || this.keys.W.isDown) vy = -220;
+        else if (this.cursors.down.isDown || this.keys.S.isDown) vy = 220;
 
-        this.player.setVelocity(moveX * 220, moveY * 220);
+        this.player.setVelocity(vx, vy);
 
-        // Controller movement (only if connected)
-        if (this.gamepad) {
-
-            const pad = this.gamepad;
-
-            const lx = Math.abs(pad.leftStick.x) > 0.2 ? pad.leftStick.x : 0;
-            const ly = Math.abs(pad.leftStick.y) > 0.2 ? pad.leftStick.y : 0;
-
-            if (lx !== 0 || ly !== 0) {
-                this.player.setVelocity(lx * 220, ly * 220);
-            }
-
-            if (pad.A) this.shoot();
-        }
-
-        // Keyboard shoot
+        // Shoot
         if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) {
             this.shoot();
         }
@@ -355,7 +314,6 @@ class MainScene extends Phaser.Scene {
         });
     }
 }
-
 
 
 // ================= GAME CONFIG =================
