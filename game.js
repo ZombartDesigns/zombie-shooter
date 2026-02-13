@@ -18,27 +18,6 @@ class MainScene extends Phaser.Scene {
         this.load.image("heart", "assets/heart.png");
     }
 
-    // ================= ZOMBIE AI =================
-
-    moveZombieTowardsPlayer(zombie) {
-
-        if (!zombie.active || !this.player) return;
-
-        const angle = Phaser.Math.Angle.Between(
-            zombie.x,
-            zombie.y,
-            this.player.x,
-            this.player.y
-        );
-
-        zombie.body.setVelocity(
-            Math.cos(angle) * this.zombieSpeed,
-            Math.sin(angle) * this.zombieSpeed
-        );
-
-        zombie.setRotation(0); // stay upright
-    }
-
     create() {
 
         // ================= LEVEL DATA =================
@@ -57,7 +36,8 @@ class MainScene extends Phaser.Scene {
 
         this.score = 0;
         this.lives = 5;
-        this.zombieSpeed = 45;
+
+        this.zombieSpeed = 60;
 
         this.killsThisLevel = 0;
         this.killsToAdvance = 20;
@@ -92,8 +72,8 @@ class MainScene extends Phaser.Scene {
         this.player.setScale(0.15);
         this.player.setCollideWorldBounds(true);
 
-        // Glow
-        this.player.postFX.addGlow(0xffff00, 4, 0, false, 0.2, 8);
+        // Subtle glow
+        this.player.postFX.addGlow(0xffff00, 2, 0, false, 0.2, 4);
 
         // ================= CONTROLS =================
 
@@ -144,11 +124,15 @@ class MainScene extends Phaser.Scene {
         if (this.levelPaused) return;
 
         const x = Phaser.Math.Between(50, 750);
-        const zombie = this.zombies.create(x, -50, "zombie");
 
+        const zombie = this.zombies.create(x, -50, "zombie");
         zombie.setScale(0.15);
 
-        zombie.postFX.addGlow(0xff0000, 4, 0, false, 0.2, 8);
+        // Subtle red glow
+        zombie.postFX.addGlow(0xff0000, 2, 0, false, 0.2, 4);
+
+        // Straight downward movement
+        zombie.setVelocityY(this.zombieSpeed);
     }
 
     // ================= SHOOT =================
@@ -169,8 +153,16 @@ class MainScene extends Phaser.Scene {
         bullet.setScale(0.2);
         bullet.setVelocityY(-600);
 
+        // NARROW HITBOX
+        bullet.body.setSize(
+            bullet.width * 0.3,
+            bullet.height * 0.6,
+            true
+        );
+
+        // Subtle glow
         bullet.postFX.clear();
-        bullet.postFX.addGlow(0xffff00, 2, 0, false, 0.2, 6);
+        bullet.postFX.addGlow(0xffff00, 1, 0, false, 0.2, 3);
     }
 
     // ================= HIT ZOMBIE =================
@@ -195,6 +187,12 @@ class MainScene extends Phaser.Scene {
     hitPlayer(player, zombie) {
 
         zombie.destroy();
+        this.loseLife();
+    }
+
+    // ================= LIFE LOST =================
+
+    loseLife() {
 
         this.lives--;
 
@@ -238,10 +236,7 @@ class MainScene extends Phaser.Scene {
 
             this.killsThisLevel = 0;
 
-            this.zombieSpeed = Math.min(
-                250,
-                this.zombieSpeed + 12
-            );
+            this.zombieSpeed += 15;
 
             const bgKey =
                 this.backgrounds[(this.level - 1) % this.backgrounds.length];
@@ -287,7 +282,7 @@ class MainScene extends Phaser.Scene {
         let vx = 0;
         let vy = 0;
 
-        // Keyboard movement
+        // Player movement
         if (this.cursors.left.isDown || this.keys.A.isDown) vx = -220;
         else if (this.cursors.right.isDown || this.keys.D.isDown) vx = 220;
 
@@ -301,9 +296,12 @@ class MainScene extends Phaser.Scene {
             this.shoot();
         }
 
-        // Zombie AI
+        // Zombies reaching bottom = lose life
         this.zombies.children.each(z => {
-            this.moveZombieTowardsPlayer(z);
+            if (z.y > 650) {
+                z.destroy();
+                this.loseLife();
+            }
         });
 
         // Bullet cleanup
