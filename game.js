@@ -89,7 +89,7 @@ class MainScene extends Phaser.Scene {
         );
 
         // Face player (adjust if sprite faces a different default direction)
-        zombie.rotation = angle - Math.PI / 2;
+        zombie.rotation = 0;
     }
 
 
@@ -424,4 +424,5 @@ const config = {
 };
 
 new Phaser.Game(config);
+
 
