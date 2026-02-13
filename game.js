@@ -152,7 +152,7 @@ class MainScene extends Phaser.Scene {
         this.player = this.physics.add.sprite(400, 540, "player");
         this.player.setScale(0.15);
         this.player.setCollideWorldBounds(true);
-        this.addOutline(this.player, 2);
+        this.addOutline(this.player, 2, 0xffff00);
 
 
         // ================= CONTROLS =================
@@ -167,6 +167,7 @@ class MainScene extends Phaser.Scene {
             defaultKey: "bullet",
             maxSize: 40
         });
+        this.addOutline(this.player, 2, 0xffff00);
 
 
         // ================= ZOMBIES =================
@@ -214,7 +215,7 @@ class MainScene extends Phaser.Scene {
         zombie.setScale(0.15);
         zombie.setCollideWorldBounds(false);
 
-        this.addOutline(zombie, 2);
+        this.addOutline(zombie, 2, 0xff0000);
     }
 
 
@@ -424,5 +425,6 @@ const config = {
 };
 
 new Phaser.Game(config);
+
 
 
