@@ -234,8 +234,18 @@ class MainScene extends Phaser.Scene {
 
         this.zombies.children.each(z => {
             if (z.y > 650) {
+
                 z.destroy();
-                this.hitPlayer();
+
+                this.lives--;
+
+                if (this.hearts[this.lives]) {
+                    this.hearts[this.lives].setVisible(false);
+                }
+
+                if (this.lives <= 0) {
+                this.gameOver();
+                }
             }
         });
     }
@@ -251,6 +261,7 @@ const config = {
 };
 
 new Phaser.Game(config);
+
 
 
 
