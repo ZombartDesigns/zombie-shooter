@@ -56,7 +56,7 @@ class MainScene extends Phaser.Scene {
 
         this.hearts = [];
         for (let i = 0; i < 5; i++) {
-            const h = this.add.image(500 + i * 40, 20, "heart");
+            const h = this.add.image(650 + i * 30, 20, "heart");
             h.setScale(0.1);
             h.setDepth(1000);
             this.hearts.push(h);
@@ -230,6 +230,7 @@ class MainScene extends Phaser.Scene {
 
             const bgKey = this.backgrounds[(this.level - 1) % this.backgrounds.length];
             this.bg.setTexture(bgKey);
+            this.bg.setDisplaySize(800, 600);
 
             this.levelPaused = false;
             this.zombieTimer.paused = false;
@@ -284,3 +285,4 @@ new Phaser.Game({
     physics: { default: "arcade", arcade: { debug: false } },
     scene: MainScene
 });
+
