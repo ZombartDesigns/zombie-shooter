@@ -34,6 +34,7 @@ class MainScene extends Phaser.Scene {
         // ================= BACKGROUND =================
         this.bg = this.add.image(400, 300, "bg1");
         this.bg.setDisplaySize(800, 600);
+        this.bg.setAlpha(0.75);
         this.bg.setDepth(0);
 
         // ================= BLOOD STORAGE =================
@@ -285,6 +286,7 @@ new Phaser.Game({
     physics: { default: "arcade", arcade: { debug: false } },
     scene: MainScene
 });
+
 
 
 
