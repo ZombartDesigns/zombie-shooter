@@ -195,7 +195,7 @@ class MainScene extends Phaser.Scene {
             this.level++;
             this.levelText.setText("Level: " + this.level);
             this.killsThisLevel = 0;
-            this.zombieSpeed += 15;
+            this.zombieSpeed += 5;
 
             const bgKey = this.backgrounds[(this.level - 1) % this.backgrounds.length];
             this.bg.setTexture(bgKey);
@@ -261,9 +261,3 @@ const config = {
 };
 
 new Phaser.Game(config);
-
-
-
-
-
-
