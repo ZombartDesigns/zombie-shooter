@@ -114,7 +114,7 @@ class MainScene extends Phaser.Scene {
         const x = Phaser.Math.Between(60, 740);
         const boss = this.zombies.create(x, -60, "boss");
 
-        boss.setScale(0.25);
+        boss.setScale(0.18);
         boss.setVelocityY(this.zombieSpeed * 0.5);
 
         boss.hp = 3;
@@ -285,5 +285,6 @@ new Phaser.Game({
     physics: { default: "arcade", arcade: { debug: false } },
     scene: MainScene
 });
+
 
 
