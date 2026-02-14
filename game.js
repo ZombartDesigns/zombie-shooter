@@ -54,18 +54,23 @@ class MainScene extends Phaser.Scene {
             strokeThickness: 3
         }).setDepth(1000);
 
-        // Hearts (FIXED SIZE + POSITION)
-        this.hearts = [];
-        for (let i = 0; i < 5; i++) {
-            const h = this.add.image(
-                560 + i * 22,
-                20,
-                "heart"
-            );
-            h.setScale(0.18);
-            h.setDepth(1000);
-            this.hearts.push(h);
-        }
+    // ================= HEARTS (FIXED SIZE + POSITION) =================
+
+    this.hearts = [];
+    
+    for (let i = 0; i < 5; i++) {
+
+        const h = this.add.image(
+            500 + i * 20,   // moved further left
+            18,
+            "heart"
+          );
+    
+        h.setScale(0.12);   // MUCH smaller
+        h.setDepth(1000);
+    
+        this.hearts.push(h);
+    }
 
         // ================= PLAYER =================
         this.player = this.physics.add.sprite(400, 540, "player");
@@ -246,3 +251,4 @@ const config = {
 };
 
 new Phaser.Game(config);
+
