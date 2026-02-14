@@ -138,23 +138,30 @@ class MainScene extends Phaser.Scene {
         }
     }
 
-    shoot() {
-        if (this.levelPaused) return;
+     shoot() {
 
-        const b = this.bullets.get(this.player.x, this.player.y - 18);
+          if (this.levelPaused) return;
+
+          const b = this.bullets.get(
+            this.player.x,
+            this.player.y - 18
+        );
+
         if (!b) return;
 
-        b.setActive(true).setVisible(true);
-        b.setScale(0.18);
-        b.body.setSize(6, 14, true);
-        b.setVelocityY(-520);
+        b.setActive(true);
+        b.setVisible(true);
 
-        b.setDepth(8); // Between zombies & player
+        b.setScale(0.18);
+        b.body.enable = true;
+        b.body.setSize(6, 14, true);
+
+        b.setVelocityY(-520);
 
         b.postFX.clear();
         b.postFX.addGlow(0xffff00, 0.9, 0, false, 0.12, 2);
     }
-
+    
     hitZombie(bullet, zombie) {
 
         bullet.destroy();
@@ -286,6 +293,7 @@ new Phaser.Game({
     physics: { default: "arcade", arcade: { debug: false } },
     scene: MainScene
 });
+
 
 
 
