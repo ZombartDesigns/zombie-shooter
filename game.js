@@ -58,7 +58,7 @@ class MainScene extends Phaser.Scene {
         // Hearts
         this.hearts = [];
         for (let i = 0; i < 5; i++) {
-            const h = this.add.image(500 + i * 40, 20, "heart");
+            const h = this.add.image(600 + i * 30, 30, "heart");
             h.setScale(0.1);
             h.setDepth(1000);
             this.hearts.push(h);
@@ -176,7 +176,7 @@ class MainScene extends Phaser.Scene {
             zombie.y + Phaser.Math.Between(-10,10),
             "blood"
         );
-        splat.setScale(zombie.isBoss ? 0.7 : 0.45);
+        splat.setScale(zombie.isBoss ? 0.4 : 0.2);
         splat.setRotation(Phaser.Math.FloatBetween(0, Math.PI * 2));
         splat.setAlpha(0.85);
         this.bloodSplats.push(splat);
@@ -290,3 +290,4 @@ new Phaser.Game({
     physics: { default: "arcade", arcade: { debug: false } },
     scene: MainScene
 });
+
