@@ -61,8 +61,8 @@ class MainScene extends Phaser.Scene {
     for (let i = 0; i < 5; i++) {
 
         const h = this.add.image(
-            600 + i * 30,   // moved further left
-            20,
+            700 + i * 30,   // moved further left
+            30,
             "heart"
           );
     
@@ -261,4 +261,5 @@ const config = {
 };
 
 new Phaser.Game(config);
+
 
