@@ -56,7 +56,7 @@ class MainScene extends Phaser.Scene {
 
         this.hearts = [];
         for (let i = 0; i < 5; i++) {
-            const h = this.add.image(650 + i * 30, 20, "heart");
+            const h = this.add.image(650 + i * 20, 30, "heart");
             h.setScale(0.1);
             h.setDepth(1000);
             this.hearts.push(h);
@@ -285,4 +285,5 @@ new Phaser.Game({
     physics: { default: "arcade", arcade: { debug: false } },
     scene: MainScene
 });
+
 
