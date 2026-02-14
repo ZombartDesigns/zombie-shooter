@@ -66,7 +66,7 @@ class MainScene extends Phaser.Scene {
             "heart"
           );
     
-        h.setScale(0.12);   // MUCH smaller
+        h.setScale(0.1);   // MUCH smaller
         h.setDepth(1000);
     
         this.hearts.push(h);
@@ -251,4 +251,5 @@ const config = {
 };
 
 new Phaser.Game(config);
+
 
