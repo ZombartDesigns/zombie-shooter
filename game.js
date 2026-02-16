@@ -20,7 +20,6 @@ class MainScene extends Phaser.Scene {
         this.load.audio("splat", "assets/splat.wav");
         this.load.audio("bossSplat", "assets/boss_splat.wav");
 
-        // 🎵 MUSIC FILES (MAKE SURE THESE EXIST)
         this.load.audio("music1", "assets/music1.mp3");
         this.load.audio("music2", "assets/music2.mp3");
         this.load.audio("music3", "assets/music3.mp3");
@@ -44,21 +43,17 @@ class MainScene extends Phaser.Scene {
 
         // ================= MUSIC =================
         this.musicTracks = [
-            this.sound.add("music1", { volume: 0.4 }),
-            this.sound.add("music2", { volume: 0.4 }),
-            this.sound.add("music3", { volume: 0.4 })
+            this.sound.add("music1", { volume: 0.4, loop: false }),
+            this.sound.add("music2", { volume: 0.4, loop: false }),
+            this.sound.add("music3", { volume: 0.4, loop: false })
         ];
 
         this.currentTrackIndex = 0;
-
-        // Start music on first user click (browser safe)
-        this.input.once("pointerdown", () => {
-            this.playNextTrack();
-        });
+        this.playNextTrack();
 
         // ================= BACKGROUND =================
         this.bg = this.add.image(400, 300, "bg1");
-        this.bg.setDisplaySize(800, 600);
+        this.bg.setDisplaySize(800, 600); // FORCE FIT
         this.bg.setAlpha(0.5);
         this.bg.setDepth(0);
 
@@ -132,7 +127,6 @@ class MainScene extends Phaser.Scene {
         this.currentMusic.once("complete", () => {
 
             this.currentTrackIndex++;
-
             if (this.currentTrackIndex >= this.musicTracks.length) {
                 this.currentTrackIndex = 0;
             }
@@ -162,6 +156,7 @@ class MainScene extends Phaser.Scene {
     }
 
     spawnBoss() {
+
         const x = Phaser.Math.Between(60, 740);
         const boss = this.zombies.create(x, -60, "boss");
 
@@ -173,6 +168,20 @@ class MainScene extends Phaser.Scene {
         boss.body.setSize(boss.width * 0.6, boss.height * 0.8, true);
         boss.setDepth(5);
         boss.postFX.addGlow(0xff0000, 1.8, 0, false, 0.2, 4);
+    }
+
+    scheduleBossSpawns() {
+
+        for (let i = 0; i < 3; i++) {
+
+            const delay = Phaser.Math.Between(3000, 12000);
+
+            this.time.delayedCall(delay, () => {
+                if (!this.levelPaused) {
+                    this.spawnBoss();
+                }
+            });
+        }
     }
 
     shoot() {
@@ -209,17 +218,9 @@ class MainScene extends Phaser.Scene {
 
         zombie.destroy();
 
-        const splat = this.add.image(
-            zombie.x + Phaser.Math.Between(-10,10),
-            zombie.y + Phaser.Math.Between(-10,10),
-            "blood"
-        );
-
+        const splat = this.add.image(zombie.x, zombie.y, "blood");
         splat.setScale(zombie.isBoss ? 0.5 : 0.3);
-        splat.setRotation(Phaser.Math.FloatBetween(0, Math.PI * 2));
-        splat.setAlpha(0.85);
         splat.setDepth(1);
-
         this.bloodSplats.push(splat);
 
         this.score += zombie.isBoss ? 50 : 10;
@@ -258,23 +259,31 @@ class MainScene extends Phaser.Scene {
         this.time.delayedCall(2000, () => {
 
             msg.destroy();
+
             this.bloodSplats.forEach(b => b.destroy());
             this.bloodSplats = [];
 
             this.level++;
             this.levelText.setText("Level: " + this.level);
+
             this.zombiesSpawned = 0;
             this.zombieSpeed += 5;
 
             const bgKey = this.backgrounds[(this.level - 1) % this.backgrounds.length];
             this.bg.setTexture(bgKey);
+            this.bg.setDisplaySize(800, 600); // FORCE FIT EVERY LEVEL
 
             this.levelPaused = false;
             this.zombieTimer.paused = false;
+
+            if (this.level % 5 === 0) {
+                this.scheduleBossSpawns();
+            }
         });
     }
 
     gameOver() {
+
         this.physics.pause();
 
         this.add.text(
@@ -302,23 +311,14 @@ class MainScene extends Phaser.Scene {
         if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.shoot();
 
         if (
-            !this.levelPaused &&
             this.zombiesSpawned >= this.killsToAdvance &&
             this.zombies.countActive(true) === 0
         ) {
             this.nextLevel();
         }
 
-        this.bullets.children.each(b => {
-            if (b.active && b.y < -20) {
-                b.setActive(false);
-                b.setVisible(false);
-                b.body.enable = false;
-            }
-        });
-
         this.zombies.children.each(z => {
-            if (z.y > this.scale.height + 20) {
+            if (z.y > 620) {
                 z.destroy();
                 this.loseLife();
             }
