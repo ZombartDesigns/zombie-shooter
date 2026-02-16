@@ -90,6 +90,12 @@ class MainScene extends Phaser.Scene {
         this.bullets = this.physics.add.group({ defaultKey:"bullet", maxSize:40 });
         this.zombies = this.physics.add.group();
         this.powerups = this.physics.add.group();
+        this.time.addEvent({
+            delay:30000,
+            callback:this.spawnPowerup,
+            callbackScope:this,
+            loop:true
+        });
 
         this.physics.add.overlap(this.player, this.powerups, this.collectPowerup, null, this);
 
@@ -198,7 +204,13 @@ class MainScene extends Phaser.Scene {
 
     update(){
 
-        if(this.levelPaused) return;
+        if (
+            !this.levelPaused &&
+            this.zombiesSpawned >= this.killsToAdvance &&
+            this.zombies.countActive(true) === 0
+        ) {
+            this.nextLevel();
+        }
 
         this.player.setVelocity(0);
 
@@ -235,3 +247,4 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
