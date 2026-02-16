@@ -198,7 +198,7 @@ class MainScene extends Phaser.Scene {
         if(zombie.hp>0) return;
 
         if(zombie.isBoss){
-            this.bossSplatSound.play({volume:0.6});
+            this.bossSplatSound.play({volume:0.4});
             this.cameras.main.shake(400,0.012);
         } else{
             this.splatSound.play({volume:0.4});
@@ -314,3 +314,4 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
