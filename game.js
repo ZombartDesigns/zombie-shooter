@@ -221,10 +221,6 @@ class MainScene extends Phaser.Scene {
         this.score += zombie.isBoss ? 50 : 10;
         this.killsThisLevel++;
         this.scoreText.setText("Score: " + this.score);
-
-        if (this.killsThisLevel >= this.killsToAdvance) {
-            this.nextLevel();
-        }
     }
 
     hitPlayer(player, zombie) {
@@ -310,6 +306,15 @@ class MainScene extends Phaser.Scene {
 
         if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.shoot();
 
+        // ================= LEVEL COMPLETE CHECK =================
+        if (
+            !this.levelPaused &&
+            this.zombiesSpawned >= this.killsToAdvance &&
+            this.zombies.countActive(true) === 0
+        ) {
+            this.nextLevel();
+}
+
         // BULLET CLEANUP
         this.bullets.children.each(b => {
 
@@ -341,6 +346,7 @@ new Phaser.Game({
     physics: { default: "arcade", arcade: { debug: false } },
     scene: MainScene
 });
+
 
 
 
