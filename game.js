@@ -34,6 +34,9 @@ class MainScene extends Phaser.Scene {
         this.killsThisLevel = 0;
         this.killsToAdvance = 20;
 
+        // ✅ NEW: track how many zombies spawned this level
+        this.zombiesSpawned = 0;
+
         this.splatSound = this.sound.add("splat");
         this.bossSplatSound = this.sound.add("bossSplat");
 
@@ -73,7 +76,7 @@ class MainScene extends Phaser.Scene {
         this.player = this.physics.add.sprite(400, 540, "player");
         this.player.setScale(0.15);
         this.player.setCollideWorldBounds(true);
-        this.player.setDepth(10); // ABOVE zombies
+        this.player.setDepth(10);
         this.player.postFX.addGlow(0xffff00, 1.2, 0, false, 0.15, 3);
 
         // ================= INPUT =================
@@ -96,13 +99,16 @@ class MainScene extends Phaser.Scene {
             loop: true
         });
 
-        // ================= COLLISIONS =================
         this.physics.add.overlap(this.bullets, this.zombies, this.hitZombie, null, this);
         this.physics.add.overlap(this.player, this.zombies, this.hitPlayer, null, this);
     }
 
     spawnZombie() {
+
         if (this.levelPaused) return;
+
+        // ✅ STOP spawning when limit reached
+        if (this.zombiesSpawned >= this.killsToAdvance) return;
 
         const x = Phaser.Math.Between(50, 750);
         const z = this.zombies.create(x, -40, "zombie");
@@ -113,8 +119,11 @@ class MainScene extends Phaser.Scene {
         z.isBoss = false;
 
         z.body.setSize(z.width * 0.5, z.height * 0.7, true);
-        z.setDepth(5); // ABOVE blood
+        z.setDepth(5);
         z.postFX.addGlow(0xff0000, 1.1, 0, false, 0.15, 3);
+
+        // ✅ count it
+        this.zombiesSpawned++;
     }
 
     spawnBoss() {
@@ -331,6 +340,7 @@ new Phaser.Game({
     physics: { default: "arcade", arcade: { debug: false } },
     scene: MainScene
 });
+
 
 
 
