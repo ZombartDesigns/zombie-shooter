@@ -16,6 +16,9 @@ class MainScene extends Phaser.Scene {
         this.load.image("bullet", "assets/bullet.png");
         this.load.image("heart", "assets/heart.png");
         this.load.image("blood", "assets/blood.png");
+
+        this.load.audio("splat", "assets/splat.wav");
+        this.load.audio("bossSplat", "assets/boss_splat.wav");
     }
 
     create() {
@@ -30,6 +33,9 @@ class MainScene extends Phaser.Scene {
         this.zombieSpeed = 60;
         this.killsThisLevel = 0;
         this.killsToAdvance = 20;
+
+        this.splatSound = this.sound.add("splat");
+        this.bossSplatSound = this.sound.add("bossSplat");
 
         // ================= BACKGROUND =================
         this.bg = this.add.image(400, 300, "bg1");
@@ -168,16 +174,27 @@ class MainScene extends Phaser.Scene {
         bullet.setVisible(false);
         bullet.body.enable = false;
 
-     zombie.hp--;
+    zombie.hp--;
 
-       if (zombie.hp > 0) return;
+        if (zombie.hp > 0) return;
+
+        // 🔊 Play correct splat sound
+        if (zombie.isBoss) {
+
+        this.bossSplatSound.play({ volume: 0.6 });
+        this.cameras.main.shake(400, 0.012);
+
+    } else {
+
+        this.splatSound.play({ volume: 0.4 });
+    }
 
        // 🔥 BOSS EXPLOSION SHAKE
        if (zombie.isBoss) {
            this.cameras.main.shake(400, 0.01);
     }
 
-zombie.destroy();
+    zombie.destroy();
 
         const splat = this.add.image(
             zombie.x + Phaser.Math.Between(-10,10),
@@ -314,5 +331,6 @@ new Phaser.Game({
     physics: { default: "arcade", arcade: { debug: false } },
     scene: MainScene
 });
+
 
 
