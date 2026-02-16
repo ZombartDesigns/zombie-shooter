@@ -90,6 +90,7 @@ class MainScene extends Phaser.Scene {
         this.bullets = this.physics.add.group({ defaultKey:"bullet", maxSize:40 });
         this.zombies = this.physics.add.group();
         this.powerups = this.physics.add.group();
+
         this.time.addEvent({
             delay:30000,
             callback:this.spawnPowerup,
@@ -110,13 +111,111 @@ class MainScene extends Phaser.Scene {
         this.physics.add.overlap(this.player,this.zombies,this.hitPlayer,null,this);
     }
 
+    // ===== LEVEL COMPLETE =====
+    nextLevel(){
+
+        this.levelPaused = true;
+        this.zombieTimer.paused = true;
+        this.zombies.clear(true, true);
+
+        const msg = this.add.text(
+            400, 300,
+            `LEVEL ${this.level} COMPLETE`,
+            {
+                fontSize: "32px",
+                fill: "#fff",
+                stroke: "#000",
+                strokeThickness: 4
+            }
+        ).setOrigin(0.5);
+
+        this.time.delayedCall(2000, () => {
+
+            msg.destroy();
+
+            this.bloodSplats.forEach(b => b.destroy());
+            this.bloodSplats = [];
+
+            this.level++;
+            this.levelText.setText("Level: " + this.level);
+
+            this.zombiesSpawned = 0;
+            this.killsThisLevel = 0;
+
+            this.zombieSpeed += 5;
+
+            const bgKey = this.backgrounds[(this.level - 1) % this.backgrounds.length];
+            this.bg.setTexture(bgKey);
+            this.bg.setDisplaySize(800, 600);
+
+            this.levelPaused = false;
+            this.zombieTimer.paused = false;
+        });
+    }
+
+    // ===== POWERUPS =====
+    spawnPowerup(){
+
+        if(this.levelPaused) return;
+
+        const types = ["speedItem","multiItem","bladeItem"];
+        const type = Phaser.Utils.Array.GetRandom(types);
+
+        const x = Phaser.Math.Between(80,720);
+        const y = Phaser.Math.Between(80,520);
+
+        const item = this.powerups.create(x,y,type);
+        item.setScale(0.08);
+        item.type = type;
+
+        if(type==="speedItem") item.postFX.addGlow(0xffffff,1.5);
+        if(type==="multiItem") item.postFX.addGlow(0xff8800,1.5);
+        if(type==="bladeItem") item.postFX.addGlow(0x00ff00,1.5);
+    }
+
+    collectPowerup(player,item){
+
+        const type = item.type;
+        item.destroy();
+
+        if(type==="speedItem"){
+            this.playerSpeed = this.basePlayerSpeed * 2;
+            this.setPlayerGlow(0xffffff);
+
+            this.time.delayedCall(20000,()=>{
+                this.playerSpeed = this.basePlayerSpeed;
+                this.setPlayerGlow(0xffff00);
+            });
+        }
+
+        if(type==="multiItem"){
+            this.multiFireActive = true;
+            this.setPlayerGlow(0xff0000);
+
+            this.time.delayedCall(15000,()=>{
+                this.multiFireActive = false;
+                this.setPlayerGlow(0xffff00);
+            });
+        }
+
+        if(type==="bladeItem"){
+            this.bladeShieldActive = true;
+            this.setPlayerGlow(0x00ff00);
+
+            this.time.delayedCall(15000,()=>{
+                this.bladeShieldActive = false;
+                this.setPlayerGlow(0xffff00);
+            });
+        }
+    }
+
     // ===== PLAYER GLOW =====
     setPlayerGlow(color){
         if(this.player.postFX) this.player.postFX.clear();
         this.player.postFX.addGlow(color,1.5,0,false,0.25,4);
     }
 
-    // ===== ZOMBIE HIT (RESTORED) =====
+    // ===== ZOMBIE HIT =====
     hitZombie(bullet,zombie){
 
         bullet.setActive(false);
@@ -147,7 +246,6 @@ class MainScene extends Phaser.Scene {
         this.scoreText.setText("Score: "+this.score);
     }
 
-    // ===== PLAYER HIT (RESTORED) =====
     hitPlayer(player,zombie){
         zombie.destroy();
         this.loseLife();
@@ -221,7 +319,6 @@ class MainScene extends Phaser.Scene {
 
         if(Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.shoot();
 
-        // Bottom screen check
         this.zombies.children.each(z=>{
             if(z.y>620){
                 z.destroy();
@@ -247,4 +344,3 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
-
