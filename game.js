@@ -19,6 +19,11 @@ class MainScene extends Phaser.Scene {
 
         this.load.audio("splat", "assets/splat.wav");
         this.load.audio("bossSplat", "assets/boss_splat.wav");
+
+        // 🎵 MUSIC FILES (MAKE SURE THESE EXIST)
+        this.load.audio("music1", "assets/music1.mp3");
+        this.load.audio("music2", "assets/music2.mp3");
+        this.load.audio("music3", "assets/music3.mp3");
     }
 
     create() {
@@ -31,25 +36,25 @@ class MainScene extends Phaser.Scene {
         this.levelPaused = false;
 
         this.zombieSpeed = 60;
-        this.killsThisLevel = 0;
         this.killsToAdvance = 20;
-
-        // ✅ NEW: track how many zombies spawned this level
         this.zombiesSpawned = 0;
 
         this.splatSound = this.sound.add("splat");
         this.bossSplatSound = this.sound.add("bossSplat");
 
-        // ================= BACKGROUND MUSIC =================
+        // ================= MUSIC =================
         this.musicTracks = [
-            this.sound.add("music1", { volume: 0.5 }),
-            this.sound.add("music2", { volume: 0.5 }),
-            this.sound.add("music3", { volume: 0.5 })
+            this.sound.add("music1", { volume: 0.4 }),
+            this.sound.add("music2", { volume: 0.4 }),
+            this.sound.add("music3", { volume: 0.4 })
         ];
 
         this.currentTrackIndex = 0;
 
-        this.playNextTrack();
+        // Start music on first user click (browser safe)
+        this.input.once("pointerdown", () => {
+            this.playNextTrack();
+        });
 
         // ================= BACKGROUND =================
         this.bg = this.add.image(400, 300, "bg1");
@@ -57,7 +62,7 @@ class MainScene extends Phaser.Scene {
         this.bg.setAlpha(0.5);
         this.bg.setDepth(0);
 
-        // ================= BLOOD STORAGE =================
+        // ================= BLOOD =================
         this.bloodSplats = [];
 
         // ================= HUD =================
@@ -114,11 +119,31 @@ class MainScene extends Phaser.Scene {
         this.physics.add.overlap(this.player, this.zombies, this.hitPlayer, null, this);
     }
 
+    // ================= MUSIC LOOP =================
+    playNextTrack() {
+
+        if (this.currentMusic) {
+            this.currentMusic.stop();
+        }
+
+        this.currentMusic = this.musicTracks[this.currentTrackIndex];
+        this.currentMusic.play();
+
+        this.currentMusic.once("complete", () => {
+
+            this.currentTrackIndex++;
+
+            if (this.currentTrackIndex >= this.musicTracks.length) {
+                this.currentTrackIndex = 0;
+            }
+
+            this.playNextTrack();
+        });
+    }
+
     spawnZombie() {
 
         if (this.levelPaused) return;
-
-        // ✅ STOP spawning when limit reached
         if (this.zombiesSpawned >= this.killsToAdvance) return;
 
         const x = Phaser.Math.Between(50, 750);
@@ -133,7 +158,6 @@ class MainScene extends Phaser.Scene {
         z.setDepth(5);
         z.postFX.addGlow(0xff0000, 1.1, 0, false, 0.15, 3);
 
-        // ✅ count it
         this.zombiesSpawned++;
     }
 
@@ -143,78 +167,47 @@ class MainScene extends Phaser.Scene {
 
         boss.setScale(0.18);
         boss.setVelocityY(this.zombieSpeed * 0.5);
-
         boss.hp = 3;
         boss.isBoss = true;
 
         boss.body.setSize(boss.width * 0.6, boss.height * 0.8, true);
-        boss.setDepth(5); // ABOVE blood
+        boss.setDepth(5);
         boss.postFX.addGlow(0xff0000, 1.8, 0, false, 0.2, 4);
     }
 
-    scheduleBossSpawns() {
-        for (let i = 0; i < 3; i++) {
-            const delay = Phaser.Math.Between(3000, 15000);
+    shoot() {
 
-            this.time.delayedCall(delay, () => {
-                if (this.level % 5 === 0 && !this.levelPaused) {
-                    this.spawnBoss();
-                }
-            });
-        }
-    }
+        if (this.levelPaused) return;
 
-     shoot() {
-
-          if (this.levelPaused) return;
-
-          const b = this.bullets.get(
-            this.player.x,
-            this.player.y - 18
-        );
-
+        const b = this.bullets.get(this.player.x, this.player.y - 18);
         if (!b) return;
 
-        b.setActive(true);
-        b.setVisible(true);
-
+        b.setActive(true).setVisible(true);
         b.setScale(0.18);
         b.body.enable = true;
         b.body.setSize(6, 14, true);
-
         b.setVelocityY(-520);
 
         b.postFX.clear();
         b.postFX.addGlow(0xffff00, 0.9, 0, false, 0.12, 2);
     }
-    
+
     hitZombie(bullet, zombie) {
 
-        bullet.setActive(false);
-        bullet.setVisible(false);
+        bullet.setActive(false).setVisible(false);
         bullet.body.enable = false;
 
-    zombie.hp--;
-
+        zombie.hp--;
         if (zombie.hp > 0) return;
 
-        // 🔊 Play correct splat sound
         if (zombie.isBoss) {
+            this.bossSplatSound.play({ volume: 0.6 });
+            this.cameras.main.shake(400, 0.012);
+        } else {
+            this.splatSound.play({ volume: 0.4 });
+        }
 
-        this.bossSplatSound.play({ volume: 0.6 });
-        this.cameras.main.shake(400, 0.012);
-
-    } else {
-
-        this.splatSound.play({ volume: 0.4 });
-    }
-
-       // 🔥 BOSS EXPLOSION SHAKE
-       if (zombie.isBoss) {
-           this.cameras.main.shake(400, 0.01);
-    }
-
-    zombie.destroy();
+        zombie.destroy();
 
         const splat = this.add.image(
             zombie.x + Phaser.Math.Between(-10,10),
@@ -225,12 +218,11 @@ class MainScene extends Phaser.Scene {
         splat.setScale(zombie.isBoss ? 0.5 : 0.3);
         splat.setRotation(Phaser.Math.FloatBetween(0, Math.PI * 2));
         splat.setAlpha(0.85);
-        splat.setDepth(1); // ALWAYS BELOW zombies
+        splat.setDepth(1);
 
         this.bloodSplats.push(splat);
 
         this.score += zombie.isBoss ? 50 : 10;
-        this.killsThisLevel++;
         this.scoreText.setText("Score: " + this.score);
     }
 
@@ -266,27 +258,19 @@ class MainScene extends Phaser.Scene {
         this.time.delayedCall(2000, () => {
 
             msg.destroy();
-
             this.bloodSplats.forEach(b => b.destroy());
             this.bloodSplats = [];
 
             this.level++;
             this.levelText.setText("Level: " + this.level);
-            this.killsThisLevel = 0;
-            this.zombiesSpawned = 0;   // ✅ RESET spawn counter
-
+            this.zombiesSpawned = 0;
             this.zombieSpeed += 5;
 
             const bgKey = this.backgrounds[(this.level - 1) % this.backgrounds.length];
             this.bg.setTexture(bgKey);
-            this.bg.setDisplaySize(800, 600);
 
             this.levelPaused = false;
             this.zombieTimer.paused = false;
-
-            if (this.level % 5 === 0) {
-                this.scheduleBossSpawns();
-            }
         });
     }
 
@@ -303,31 +287,6 @@ class MainScene extends Phaser.Scene {
             this.scene.restart();
         });
     }
-    playNextTrack() {
-
-    // Stop any currently playing track
-    if (this.currentMusic) {
-        this.currentMusic.stop();
-    }
-
-    // Get next track
-    this.currentMusic = this.musicTracks[this.currentTrackIndex];
-
-    this.currentMusic.play();
-
-    // When track finishes, move to next
-    this.currentMusic.once("complete", () => {
-
-        this.currentTrackIndex++;
-
-        if (this.currentTrackIndex >= this.musicTracks.length) {
-            this.currentTrackIndex = 0;
-        }
-
-        this.input.once("pointerdown", () => {
-        this.playNextTrack();
-    });
-}
 
     update() {
 
@@ -342,31 +301,24 @@ class MainScene extends Phaser.Scene {
 
         if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.shoot();
 
-        // ================= LEVEL COMPLETE CHECK =================
         if (
             !this.levelPaused &&
             this.zombiesSpawned >= this.killsToAdvance &&
             this.zombies.countActive(true) === 0
         ) {
             this.nextLevel();
-}
+        }
 
-        // BULLET CLEANUP
         this.bullets.children.each(b => {
-
             if (b.active && b.y < -20) {
-
                 b.setActive(false);
                 b.setVisible(false);
                 b.body.enable = false;
             }
         });
 
-        // ZOMBIE / BOSS BOTTOM CHECK
         this.zombies.children.each(z => {
-
             if (z.y > this.scale.height + 20) {
-
                 z.destroy();
                 this.loseLife();
             }
@@ -382,10 +334,3 @@ new Phaser.Game({
     physics: { default: "arcade", arcade: { debug: false } },
     scene: MainScene
 });
-
-
-
-
-
-
-
