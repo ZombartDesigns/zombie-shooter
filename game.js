@@ -44,9 +44,17 @@ class MainScene extends Phaser.Scene {
         this.zombiesSpawned = 0;
 
         // ===== MUSIC SYSTEM =====
-        this.musicTracks = ["music1","music2","music3"];
-        this.currentTrack = 0;
-        this.playMusic();
+        if (!this.sound.get("music1")) {
+
+        this.musicTracks = [
+            this.sound.add("music1", { volume: 0.5 }),
+            this.sound.add("music2", { volume: 0.5 }),
+            this.sound.add("music3", { volume: 0.5 })
+        ];
+
+        this.currentTrackIndex = 0;
+        this.playNextTrack();
+    }
 
         this.splatSound = this.sound.add("splat");
         this.bossSplatSound = this.sound.add("bossSplat");
@@ -314,4 +322,5 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
 
