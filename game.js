@@ -40,6 +40,17 @@ class MainScene extends Phaser.Scene {
         this.splatSound = this.sound.add("splat");
         this.bossSplatSound = this.sound.add("bossSplat");
 
+        // ================= BACKGROUND MUSIC =================
+        this.musicTracks = [
+            this.sound.add("music1", { volume: 0.5 }),
+            this.sound.add("music2", { volume: 0.5 }),
+            this.sound.add("music3", { volume: 0.5 })
+        ];
+
+        this.currentTrackIndex = 0;
+
+        this.playNextTrack();
+
         // ================= BACKGROUND =================
         this.bg = this.add.image(400, 300, "bg1");
         this.bg.setDisplaySize(800, 600);
@@ -292,6 +303,31 @@ class MainScene extends Phaser.Scene {
             this.scene.restart();
         });
     }
+    playNextTrack() {
+
+    // Stop any currently playing track
+    if (this.currentMusic) {
+        this.currentMusic.stop();
+    }
+
+    // Get next track
+    this.currentMusic = this.musicTracks[this.currentTrackIndex];
+
+    this.currentMusic.play();
+
+    // When track finishes, move to next
+    this.currentMusic.once("complete", () => {
+
+        this.currentTrackIndex++;
+
+        if (this.currentTrackIndex >= this.musicTracks.length) {
+            this.currentTrackIndex = 0;
+        }
+
+        this.input.once("pointerdown", () => {
+        this.playNextTrack();
+    });
+}
 
     update() {
 
@@ -346,6 +382,7 @@ new Phaser.Game({
     physics: { default: "arcade", arcade: { debug: false } },
     scene: MainScene
 });
+
 
 
 
