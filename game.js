@@ -43,7 +43,6 @@ class MainScene extends Phaser.Scene {
         this.killsToAdvance = 20;
         this.zombiesSpawned = 0;
 
-        // ===== PLAYER SPEED STATE =====
         this.basePlayerSpeed = 220;
         this.playerSpeed = this.basePlayerSpeed;
 
@@ -51,18 +50,14 @@ class MainScene extends Phaser.Scene {
         this.multiFireActive = false;
         this.bladeShieldActive = false;
 
-        // ===== MUSIC SYSTEM =====
+        // ===== MUSIC START =====
         if (!this.sound.get("music1")) {
-
             this.musicTracks = [
                 this.sound.add("music1", { volume: 0.5 }),
                 this.sound.add("music2", { volume: 0.5 }),
                 this.sound.add("music3", { volume: 0.5 })
             ];
-
             this.currentTrackIndex = 0;
-
-            // Play first track
             this.musicTracks[this.currentTrackIndex].play();
         }
 
@@ -105,77 +100,69 @@ class MainScene extends Phaser.Scene {
             loop:true
         });
 
-        this.time.addEvent({
-            delay:30000,
-            callback:this.spawnPowerup,
-            callbackScope:this,
-            loop:true
-        });
-
         this.physics.add.overlap(this.bullets,this.zombies,this.hitZombie,null,this);
         this.physics.add.overlap(this.player,this.zombies,this.hitPlayer,null,this);
     }
 
-    // ===== PLAYER GLOW FIXED =====
+    // ===== PLAYER GLOW =====
     setPlayerGlow(color){
-        if(!this.player) return;
-
-        if(this.player.postFX){
-            this.player.postFX.clear();
-        }
-
+        if(this.player.postFX) this.player.postFX.clear();
         this.player.postFX.addGlow(color,1.5,0,false,0.25,4);
     }
 
-    // ===== POWERUP ACTIVATION =====
-    collectPowerup(player,item){
+    // ===== ZOMBIE HIT (RESTORED) =====
+    hitZombie(bullet,zombie){
 
-        const type = item.texture.key;
+        bullet.setActive(false);
+        bullet.setVisible(false);
+        bullet.body.enable=false;
 
-        item.destroy();
+        zombie.hp--;
 
-        if(type==="speedItem") this.activateSpeedBoost();
-        if(type==="multiItem") this.activateMultiFire();
-        if(type==="bladeItem") this.activateBladeShield();
+        if(zombie.hp>0) return;
+
+        if(zombie.isBoss){
+            this.bossSplatSound.play({volume:0.4});
+            this.cameras.main.shake(400,0.012);
+        } else{
+            this.splatSound.play({volume:0.4});
+        }
+
+        zombie.destroy();
+
+        const splat=this.add.image(zombie.x,zombie.y,"blood")
+            .setScale(zombie.isBoss?0.5:0.3)
+            .setAlpha(0.85);
+
+        this.bloodSplats.push(splat);
+
+        this.score+=zombie.isBoss?50:10;
+        this.killsThisLevel++;
+        this.scoreText.setText("Score: "+this.score);
     }
 
-    activateSpeedBoost(){
+    // ===== PLAYER HIT (RESTORED) =====
+    hitPlayer(player,zombie){
+        zombie.destroy();
+        this.loseLife();
+    }
 
-        this.speedBoostActive = true;
-        this.playerSpeed = this.basePlayerSpeed * 2;
+    loseLife(){
+        this.lives--;
+        if(this.hearts[this.lives]) this.hearts[this.lives].setVisible(false);
+        if(this.lives<=0) this.gameOver();
+    }
 
-        this.setPlayerGlow(0xffffff);
+    gameOver(){
+        this.physics.pause();
+        this.add.text(400,300,"GAME OVER\nClick To Restart",
+            {fontSize:"32px",fill:"#fff",align:"center"}).setOrigin(0.5);
 
-        this.time.delayedCall(20000,()=>{
-            this.speedBoostActive = false;
-            this.playerSpeed = this.basePlayerSpeed;
-            this.setPlayerGlow(0xffff00);
+        this.input.once("pointerdown",()=>{
+            this.scene.restart();
         });
     }
 
-    activateMultiFire(){
-
-        this.multiFireActive = true;
-        this.setPlayerGlow(0xff0000);
-
-        this.time.delayedCall(15000,()=>{
-            this.multiFireActive = false;
-            this.setPlayerGlow(0xffff00);
-        });
-    }
-
-    activateBladeShield(){
-
-        this.bladeShieldActive = true;
-        this.setPlayerGlow(0x00ff00);
-
-        this.time.delayedCall(15000,()=>{
-            this.bladeShieldActive = false;
-            this.setPlayerGlow(0xffff00);
-        });
-    }
-
-    // ===== ZOMBIES =====
     spawnZombie(){
         if(this.levelPaused) return;
         if(this.zombiesSpawned>=this.killsToAdvance) return;
@@ -193,7 +180,6 @@ class MainScene extends Phaser.Scene {
         this.zombiesSpawned++;
     }
 
-    // ===== SHOOT =====
     shoot(){
         if(this.levelPaused) return;
 
@@ -210,7 +196,6 @@ class MainScene extends Phaser.Scene {
         b.postFX.addGlow(0xffff00,1);
     }
 
-    // ===== UPDATE =====
     update(){
 
         if(this.levelPaused) return;
@@ -223,6 +208,14 @@ class MainScene extends Phaser.Scene {
         if(this.cursors.down.isDown || this.keys.S.isDown) this.player.setVelocityY(this.playerSpeed);
 
         if(Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.shoot();
+
+        // Bottom screen check
+        this.zombies.children.each(z=>{
+            if(z.y>620){
+                z.destroy();
+                this.loseLife();
+            }
+        });
 
         this.bullets.children.each(b=>{
             if(b.active && b.y<-20){
@@ -242,5 +235,3 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
-
-
