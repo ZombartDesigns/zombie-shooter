@@ -20,10 +20,6 @@ class MainScene extends Phaser.Scene {
 
         this.load.audio("splat", "assets/splat.wav");
         this.load.audio("bossSplat", "assets/boss_splat.wav");
-
-        this.load.image("speedItem", "assets/speed.png");
-        this.load.image("multiItem", "assets/triple.png");
-        this.load.image("bladeItem", "assets/blade.png");
     }
 
     create() {
@@ -39,13 +35,6 @@ class MainScene extends Phaser.Scene {
         this.killsToAdvance = 20;
         this.zombiesSpawned = 0;
 
-        this.basePlayerSpeed = 220;
-        this.playerSpeed = this.basePlayerSpeed;
-
-        this.speedBoostActive = false;
-        this.multiFireActive = false;
-        this.bladeShieldActive = false;
-
         this.splatSound = this.sound.add("splat");
         this.bossSplatSound = this.sound.add("bossSplat");
 
@@ -53,7 +42,6 @@ class MainScene extends Phaser.Scene {
         this.bg.setDisplaySize(800, 600);
         this.bg.setAlpha(0.5);
 
-        // BLOOD STORAGE (RESTORED)
         this.bloodSplats = [];
 
         this.scoreText = this.add.text(10, 8, "Score: 0", {
@@ -80,14 +68,16 @@ class MainScene extends Phaser.Scene {
         this.player = this.physics.add.sprite(400, 540, "player");
         this.player.setScale(0.15);
         this.player.setCollideWorldBounds(true);
-        this.setPlayerGlow(0xffff00);
 
         this.cursors = this.input.keyboard.createCursorKeys();
         this.keys = this.input.keyboard.addKeys("W,A,S,D,SPACE");
 
-        this.bullets = this.physics.add.group({ maxSize: 40 });
+        this.bullets = this.physics.add.group({
+            defaultKey: "bullet",
+            maxSize: 40
+        });
+
         this.zombies = this.physics.add.group();
-        this.powerups = this.physics.add.group();
 
         this.zombieTimer = this.time.addEvent({
             delay: 1500,
@@ -98,39 +88,41 @@ class MainScene extends Phaser.Scene {
 
         this.physics.add.overlap(this.bullets, this.zombies, this.hitZombie, null, this);
         this.physics.add.overlap(this.player, this.zombies, this.hitPlayer, null, this);
-        this.physics.add.overlap(this.player, this.powerups, this.collectPowerup, null, this);
     }
 
-    // ================= FIXED BULLETS =================
+    spawnZombie() {
+
+        if (this.levelPaused) return;
+        if (this.zombiesSpawned >= this.killsToAdvance) return;
+
+        const x = Phaser.Math.Between(50, 750);
+        const z = this.zombies.create(x, -40, "zombie");
+
+        z.setScale(0.15);
+        z.setVelocityY(this.zombieSpeed);
+        z.hp = 1;
+        z.isBoss = false;
+
+        z.body.setSize(z.width * 0.5, z.height * 0.7, true);
+
+        this.zombiesSpawned++;
+    }
+
     shoot() {
 
         if (this.levelPaused) return;
 
-        const fire = (vx, vy) => {
+        const b = this.bullets.get(this.player.x, this.player.y - 18);
+        if (!b) return;
 
-            const b = this.bullets.get(this.player.x, this.player.y - 18, "bullet");
-            if (!b) return;
-
-            b.setActive(true);
-            b.setVisible(true);
-
-            b.setScale(0.18);              // FIX SCALE
-            b.body.enable = true;
-            b.body.setSize(6, 14, true);   // FIX HITBOX
-
-            b.setVelocity(vx, vy);
-        };
-
-        if (this.multiFireActive) {
-            fire(0, -520);
-            fire(-200, -520);
-            fire(200, -520);
-        } else {
-            fire(0, -520);
-        }
+        b.setActive(true);
+        b.setVisible(true);
+        b.setScale(0.18);
+        b.body.enable = true;
+        b.body.setSize(6, 14, true);
+        b.setVelocityY(-520);
     }
 
-    // ================= RESTORED BLOOD + SOUND =================
     hitZombie(bullet, zombie) {
 
         bullet.setActive(false);
@@ -151,24 +143,39 @@ class MainScene extends Phaser.Scene {
         zombie.destroy();
 
         const splat = this.add.image(
-            zombie.x + Phaser.Math.Between(-10,10),
-            zombie.y + Phaser.Math.Between(-10,10),
+            zombie.x,
+            zombie.y,
             "blood"
         );
 
         splat.setScale(zombie.isBoss ? 0.5 : 0.3);
-        splat.setRotation(Phaser.Math.FloatBetween(0, Math.PI * 2));
         splat.setAlpha(0.85);
 
         this.bloodSplats.push(splat);
 
         this.score += zombie.isBoss ? 50 : 10;
         this.killsThisLevel++;
-
         this.scoreText.setText("Score: " + this.score);
     }
 
-    // ================= RESTORED LEVEL COMPLETE =================
+    hitPlayer(player, zombie) {
+        zombie.destroy();
+        this.loseLife();
+    }
+
+    loseLife() {
+
+        this.lives--;
+
+        if (this.hearts[this.lives]) {
+            this.hearts[this.lives].setVisible(false);
+        }
+
+        if (this.lives <= 0) {
+            this.gameOver();
+        }
+    }
+
     nextLevel() {
 
         this.levelPaused = true;
@@ -210,6 +217,25 @@ class MainScene extends Phaser.Scene {
         });
     }
 
+    gameOver() {
+
+        this.physics.pause();
+
+        this.add.text(
+            400, 300,
+            "GAME OVER\nClick To Restart",
+            {
+                fontSize: "32px",
+                fill: "#fff",
+                align: "center"
+            }
+        ).setOrigin(0.5);
+
+        this.input.once("pointerdown", () => {
+            this.scene.restart();
+        });
+    }
+
     update() {
 
         if (this.levelPaused) return;
@@ -217,21 +243,20 @@ class MainScene extends Phaser.Scene {
         this.player.setVelocity(0);
 
         if (this.cursors.left.isDown || this.keys.A.isDown)
-            this.player.setVelocityX(-this.playerSpeed);
+            this.player.setVelocityX(-220);
 
         if (this.cursors.right.isDown || this.keys.D.isDown)
-            this.player.setVelocityX(this.playerSpeed);
+            this.player.setVelocityX(220);
 
         if (this.cursors.up.isDown || this.keys.W.isDown)
-            this.player.setVelocityY(-this.playerSpeed);
+            this.player.setVelocityY(-220);
 
         if (this.cursors.down.isDown || this.keys.S.isDown)
-            this.player.setVelocityY(this.playerSpeed);
+            this.player.setVelocityY(220);
 
         if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE))
             this.shoot();
 
-        // LEVEL PROGRESSION CHECK (RESTORED)
         if (
             !this.levelPaused &&
             this.zombiesSpawned >= this.killsToAdvance &&
@@ -245,6 +270,13 @@ class MainScene extends Phaser.Scene {
                 b.setActive(false);
                 b.setVisible(false);
                 b.body.enable = false;
+            }
+        });
+
+        this.zombies.children.each(z => {
+            if (z.y > 620) {
+                z.destroy();
+                this.loseLife();
             }
         });
     }
