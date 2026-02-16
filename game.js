@@ -168,11 +168,16 @@ class MainScene extends Phaser.Scene {
         bullet.setVisible(false);
         bullet.body.enable = false;
 
-        zombie.hp--;
+     zombie.hp--;
 
-        if (zombie.hp > 0) return;
+       if (zombie.hp > 0) return;
 
-        zombie.destroy();
+       // 🔥 BOSS EXPLOSION SHAKE
+       if (zombie.isBoss) {
+           this.cameras.main.shake(400, 0.01);
+    }
+
+zombie.destroy();
 
         const splat = this.add.image(
             zombie.x + Phaser.Math.Between(-10,10),
@@ -309,4 +314,5 @@ new Phaser.Game({
     physics: { default: "arcade", arcade: { debug: false } },
     scene: MainScene
 });
+
 
