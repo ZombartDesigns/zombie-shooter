@@ -266,6 +266,7 @@ class MainScene extends Phaser.Scene {
             this.level++;
             this.levelText.setText("Level: " + this.level);
             this.killsThisLevel = 0;
+            this.zombiesSpawned = 0;   // ✅ RESET spawn counter
 
             this.zombieSpeed += 5;
 
@@ -340,6 +341,7 @@ new Phaser.Game({
     physics: { default: "arcade", arcade: { debug: false } },
     scene: MainScene
 });
+
 
 
 
