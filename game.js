@@ -132,20 +132,40 @@ class MainScene extends Phaser.Scene {
         this.player.postFX.addGlow(color, 1.5, 0, false, 0.2, 4);
     }
 
-    // ================= POWERUP SPAWN =================
-    spawnPowerup() {
-        if (this.levelPaused) return;
+// ================= POWERUP SPAWN =================
+spawnPowerup() {
 
-        const types = ["speedItem", "multiItem", "bladeItem"];
-        const type = Phaser.Utils.Array.GetRandom(types);
+    if (this.levelPaused) return;
 
-        const x = Phaser.Math.Between(80, 720);
-        const y = Phaser.Math.Between(80, 520);
+    const types = ["speedItem", "multiItem", "bladeItem"];
+    const type = Phaser.Utils.Array.GetRandom(types);
 
-        const item = this.powerups.create(x, y, type);
-        item.setScale(0.15);
-        item.type = type;
+    const x = Phaser.Math.Between(80, 720);
+    const y = Phaser.Math.Between(80, 520);
+
+    const item = this.powerups.create(x, y, type);
+    item.setScale(0.15);
+    item.type = type;
+
+    // ================= OUTLINES =================
+
+    item.postFX.clear();
+
+    if (type === "speedItem") {
+        // WHITE outline
+        item.postFX.addGlow(0xffffff, 1.2, 0, false, 0.15, 4);
     }
+
+    if (type === "multiItem") {
+        // ORANGE outline
+        item.postFX.addGlow(0xff8800, 1.2, 0, false, 0.15, 4);
+    }
+
+    if (type === "bladeItem") {
+        // GREEN outline
+        item.postFX.addGlow(0x00ff00, 1.2, 0, false, 0.15, 4);
+    }
+}
 
     collectPowerup(player, item) {
         item.destroy();
@@ -276,3 +296,4 @@ new Phaser.Game({
     physics: { default: "arcade", arcade: { debug: false } },
     scene: MainScene
 });
+
