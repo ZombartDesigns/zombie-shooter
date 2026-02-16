@@ -164,7 +164,9 @@ class MainScene extends Phaser.Scene {
     
     hitZombie(bullet, zombie) {
 
-        bullet.destroy();
+        bullet.setActive(false);
+        bullet.setVisible(false);
+        bullet.body.enable = false;
 
         zombie.hp--;
 
@@ -276,12 +278,15 @@ class MainScene extends Phaser.Scene {
 
         if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.shoot();
 
-        this.zombies.children.each(z => {
-            if (z.y > 650) {
-                z.destroy();
-                this.loseLife();
-            }
-        });
+        this.bullets.children.each(b => {
+
+        if (b.active && b.y < -20) {
+
+            b.setActive(false);
+            b.setVisible(false);
+            b.body.enable = false;
+        }
+    });;
     }
 }
 
@@ -293,9 +298,3 @@ new Phaser.Game({
     physics: { default: "arcade", arcade: { debug: false } },
     scene: MainScene
 });
-
-
-
-
-
-
