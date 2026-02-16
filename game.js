@@ -61,8 +61,10 @@ class MainScene extends Phaser.Scene {
             ];
 
             this.currentTrackIndex = 0;
-            this.playNextTrack();
-        }
+
+            // Play first track
+            this.musicTracks[this.currentTrackIndex].play();
+        }}
 
         this.splatSound = this.sound.add("splat");
         this.bossSplatSound = this.sound.add("bossSplat");
@@ -240,3 +242,4 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
