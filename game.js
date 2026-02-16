@@ -278,15 +278,26 @@ class MainScene extends Phaser.Scene {
 
         if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.shoot();
 
+        // BULLET CLEANUP
         this.bullets.children.each(b => {
 
-        if (b.active && b.y < -20) {
+            if (b.active && b.y < -20) {
 
-            b.setActive(false);
-            b.setVisible(false);
-            b.body.enable = false;
-        }
-    });;
+                b.setActive(false);
+                b.setVisible(false);
+                b.body.enable = false;
+            }
+        });
+
+        // ZOMBIE / BOSS BOTTOM CHECK
+        this.zombies.children.each(z => {
+
+            if (z.y > this.scale.height + 20) {
+
+                z.destroy();
+                this.loseLife();
+            }
+        });
     }
 }
 
@@ -298,3 +309,4 @@ new Phaser.Game({
     physics: { default: "arcade", arcade: { debug: false } },
     scene: MainScene
 });
+
