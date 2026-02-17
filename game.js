@@ -325,12 +325,15 @@ class MainScene extends Phaser.Scene {
                 this.time.delayedCall(randomDelay, () => {
                     if(!this.levelPaused){
                         this.spawnBoss();
-                    }
-                });
-
-            }
-        }
-
+                      }
+                  });
+              }
+          }
+     
+        });
+ 
+    }
+    
     shoot(){
         if(this.levelPaused) return;
 
@@ -400,6 +403,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
 
 
 
