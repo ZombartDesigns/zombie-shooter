@@ -136,6 +136,12 @@ class LoadingScene extends Phaser.Scene {
             UI: 1000
         };
 
+       // MEGABOSS TEST
+        this.input.keyboard.on("keydown-B", () => {
+        this.level = 10;
+        this.spawnMegaBoss();
+    });
+
         // ===== MUSIC =====
         this.musicTracks = [
             this.sound.add("music1", { volume: 0.5 }),
@@ -870,6 +876,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
