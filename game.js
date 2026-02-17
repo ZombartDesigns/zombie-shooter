@@ -299,11 +299,12 @@ class MainScene extends Phaser.Scene {
         if(Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.shoot();
 
         this.zombies.children.each(z => {
-        if(z.y > 620){
-            z.destroy();
-            this.loseLife();
-        }
-    });
+            if(z.y > 620){
+                z.destroy();
+                this.loseLife();
+            }
+        });
+    }
 }
 
 new Phaser.Game({
@@ -314,6 +315,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
 
 
 
