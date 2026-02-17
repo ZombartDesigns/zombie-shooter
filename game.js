@@ -381,7 +381,7 @@ class MainScene extends Phaser.Scene {
             document.body.removeChild(nameInput);
 
             // Go back to loading screen
-            this.scene.start("StartScene");
+            this.scene.start("LoadingScene");
         }
     });
 }
@@ -627,6 +627,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
