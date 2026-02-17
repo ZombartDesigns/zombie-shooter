@@ -1,3 +1,64 @@
+class StartScene extends Phaser.Scene {
+    constructor(){
+        super("StartScene");
+    }
+
+    preload(){
+        // Load only what we need for menu
+        this.load.image("menuBG", "assets/background1.png");
+        this.load.image("banner", "assets/banner.png");
+    }
+
+    create(){
+
+        // Background
+        this.add.image(400,300,"menuBG")
+            .setDisplaySize(800,600)
+            .setAlpha(0.6);
+
+        // Title banner
+        this.add.image(400,120,"banner")
+            .setScale(0.7);
+
+        // Click text
+        this.add.text(400,450,"CLICK TO START",{
+            fontSize:"32px",
+            fill:"#ffffff",
+            stroke:"#000",
+            strokeThickness:6
+        }).setOrigin(0.5);
+
+        // Show leaderboard
+        this.showLeaderboard();
+
+        this.input.once("pointerdown",()=>{
+            this.scene.start("MainScene");
+        });
+    }
+
+    showLeaderboard(){
+
+        let scores = JSON.parse(localStorage.getItem("zombieLeaderboard")) || [];
+
+        this.add.text(400,220,"TOP SURVIVORS",{
+            fontSize:"28px",
+            fill:"#ffcc00"
+        }).setOrigin(0.5);
+
+        for(let i=0;i<5;i++){
+
+            let entry = scores[i];
+            let text = entry 
+                ? `${i+1}. ${entry.name} - ${entry.score}`
+                : `${i+1}. ---`;
+
+            this.add.text(400,260 + i*30,text,{
+                fontSize:"20px",
+                fill:"#ffffff"
+            }).setOrigin(0.5);
+        }
+    }
+}
 class MainScene extends Phaser.Scene {
     constructor() {
         super("MainScene");
@@ -264,18 +325,70 @@ class MainScene extends Phaser.Scene {
     }
 
     this.add.text(
-        400,300,
-        "GAME OVER\nClick To Restart",
+        400,240,
+        "GAME OVER",
         {
-            fontSize:"32px",
-            fill:"#fff",
-            align:"center"
+            fontSize:"40px",
+            fill:"#ff0000",
+            stroke:"#000",
+            strokeThickness:6
         }
     ).setOrigin(0.5).setDepth(this.LAYERS.UI);
 
-    this.input.once("pointerdown",()=>{
-        this.scene.restart();
+    this.add.text(
+        400,285,
+        `FINAL SCORE: ${this.score}`,
+        {
+            fontSize:"26px",
+            fill:"#ffffff"
+        }
+    ).setOrigin(0.5).setDepth(this.LAYERS.UI);
+
+    this.askForName();
+}
+    askForName(){
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.maxLength = 3;
+
+    input.style.position = "absolute";
+    input.style.top = "50%";
+    input.style.left = "50%";
+    input.style.transform = "translate(-50%, -50%)";
+    input.style.fontSize = "28px";
+    input.style.textAlign = "center";
+    input.style.textTransform = "uppercase";
+    input.style.zIndex = "1000";
+
+    document.body.appendChild(input);
+    input.focus();
+
+    input.addEventListener("keydown",(e)=>{
+        if(e.key === "Enter"){
+
+            const name = input.value.toUpperCase();
+            document.body.removeChild(input);
+
+            if(name.length === 3){
+                this.saveScore(name,this.score);
+            }
+
+            this.scene.restart();
+        }
     });
+}
+    saveScore(name, score){
+
+    let scores = JSON.parse(localStorage.getItem("zombieLeaderboard")) || [];
+
+    scores.push({name:name, score:score});
+
+    scores.sort((a,b)=> b.score - a.score);
+
+    scores = scores.slice(0,5);
+
+    localStorage.setItem("zombieLeaderboard", JSON.stringify(scores));
 }
     
     hitZombie(bullet,zombie){
@@ -473,8 +586,9 @@ new Phaser.Game({
     height:600,
     parent:"game-container",
     physics:{ default:"arcade", arcade:{debug:false}},
-    scene:MainScene
+    scene: [StartScene, MainScene]
 });
+
 
 
 
