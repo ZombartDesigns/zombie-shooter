@@ -299,6 +299,21 @@ class MainScene extends Phaser.Scene {
 
         this.zombiesSpawned++;
     }
+        spawnBoss(){
+
+            if(this.levelPaused) return;
+
+            const x = Phaser.Math.Between(60,740);
+            const boss = this.zombies.create(x, -60, "boss");
+
+            boss.setScale(0.18);
+            boss.setVelocityY(this.zombieSpeed * 0.5);
+
+            boss.hp = 3;
+            boss.isBoss = true;
+
+            boss.postFX.addGlow(0xff0000, 2, 0, false, 0.25, 4);
+    }
 
     shoot(){
         if(this.levelPaused) return;
@@ -360,4 +375,5 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
 
