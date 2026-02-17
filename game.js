@@ -290,9 +290,10 @@ class MainScene extends Phaser.Scene {
 
         zombie.destroy();
 
-        const splat=this.add.image(zombie.x,zombie.y,"blood")
-            .setScale(zombie.isBoss?0.5:0.3)
-            .setAlpha(0.85);
+        const splat = this.add.image(zombie.x, zombie.y, "blood")
+            .setScale(zombie.isBoss ? 0.5 : 0.3)
+            .setAlpha(0.85)
+            .setDepth(1);   // 🔥 LOW depth
 
         this.bloodSplats.push(splat);
 
@@ -343,6 +344,8 @@ class MainScene extends Phaser.Scene {
         z.setVelocityY(this.zombieSpeed);
         z.hp=1;
         z.isBoss=false;
+        z.setDepth(5);   // ABOVE blood
+        boss.setDepth(6);  // slightly higher if you want
 
         z.postFX.addGlow(0xff0000,1.2,0,false,0.15,3);
 
@@ -424,4 +427,5 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
 
