@@ -85,6 +85,7 @@ class MainScene extends Phaser.Scene {
         this.load.image("bullet", "assets/bullet.png");
         this.load.image("heart", "assets/heart.png");
         this.load.image("blood", "assets/blood.png");
+        this.load.image("shard", "assets/shard.png");
 
         this.load.image("speedItem", "assets/speed.png");
         this.load.image("multiItem", "assets/triple.png");
@@ -299,8 +300,28 @@ class MainScene extends Phaser.Scene {
                 const direction = Phaser.Math.Between(0,1) ? 1 : -1;
                 this.megaBoss.setVelocityX(direction * (this.zombieSpeed * 2));
 
-            }
+                // Boss movement speed scales with level
+        this.megaBossSpeed = 80 + (this.level * 3);
+
+        // Random horizontal movement
+        this.megaBossMoveEvent = this.time.addEvent({
+            delay: 2000,
+            loop: true,
+            callback: () => {
+
+        if(!this.bossActive) return;
+
+        const targetX = Phaser.Math.Between(150, 650);
+
+        this.tweens.add({
+            targets: this.megaBoss,
+            x: targetX,
+            duration: 1000,
+            ease: "Sine.easeInOut"
         });
+
+    }
+});
 
     this.startSpikeCycle();
 }
@@ -336,40 +357,36 @@ class MainScene extends Phaser.Scene {
 
     spawnSpike(){
 
-        if(!this.megaBoss || !this.bossActive) return;
+        if(!this.megaBoss) return;
 
-        const totalShards = 7;
-        const spreadAngle = 120; // degrees
-        const startAngle = -90 - (spreadAngle / 2);
+        const shardCount = 7; // number of shards per wave
+        const spreadAngle = 120; // total spread arc in degrees
 
-        for(let i = 0; i < totalShards; i++){
+        for(let i = 0; i < shardCount; i++){
 
-            const angle = Phaser.Math.DegToRad(
-                startAngle + (spreadAngle / (totalShards - 1)) * i
+        // Calculate angle
+        const angle = Phaser.Math.DegToRad(
+            -spreadAngle/2 + (spreadAngle/(shardCount-1)) * i
         );
 
-        const speed = 250 + (this.zombieSpeed * 2);
+        const speed = 200 + (this.level * 5); // scales with level
 
-        const spike = this.spikes.create(
+        const shard = this.spikes.create(
             this.megaBoss.x,
             this.megaBoss.y + 20,
-            "boss"
+            "shard"
         )
-        .setScale(0.08)
-        .setTint(0xff8800)
+        .setScale(0.6)
         .setDepth(this.LAYERS.ZOMBIE + 4);
 
-        spike.body.allowGravity = false;
-
-        spike.setVelocity(
+        shard.setVelocity(
             Math.cos(angle) * speed,
             Math.sin(angle) * speed
         );
 
-        spike.postFX.addGlow(0xff6600, 2);
+        shard.postFX.addGlow(0xff6600, 2);
     }
 }
-
     hitSpike(bullet, spike){
 
     bullet.setActive(false);
@@ -615,6 +632,9 @@ class MainScene extends Phaser.Scene {
 
     if(this.spikeEvent){
         this.spikeEvent.remove();
+
+    if(this.megaBossMoveEvent){
+    this.megaBossMoveEvent.remove();
     }
 
     this.bossSplatSound.play({volume:0.8});
@@ -779,6 +799,12 @@ class MainScene extends Phaser.Scene {
         if(Phaser.Input.Keyboard.JustDown(this.keys.SPACE))
             this.shoot();
 
+        this.spikes.children.each(shard => {
+        if(shard.y > 650 || shard.x < -50 || shard.x > 850){
+        shard.destroy();
+        }
+    });
+
         // Zombie bottom check
         this.zombies.children.each(z => {
             if(z.y > 620){
@@ -805,6 +831,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
