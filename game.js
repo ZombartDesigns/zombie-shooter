@@ -669,29 +669,33 @@ class LoadingScene extends Phaser.Scene {
 
     killMegaBoss(){
 
-        this.bossActive = false;
+    this.bossActive = false;   // 🚨 MUST be first
 
-        if(this.spikeEvent){
-            this.spikeEvent.remove();
-        }
-
-        if(this.megaBossMoveEvent){
-            this.megaBossMoveEvent.remove();
-        }
-
-        this.bossSplatSound.play({volume:0.8});
-        this.cameras.main.shake(800, 0.02);
-
-        const explosion = this.add.image(this.megaBoss.x, this.megaBoss.y, "blood")
-            .setScale(1.2)
-            .setDepth(this.LAYERS.BLOOD);
-
-        this.megaBoss.destroy();
-        this.spikes.clear(true, true);
-
-        this.zombieTimer.paused = false;
-        this.levelPaused = false;
+    if(this.spikeEvent){
+        this.spikeEvent.remove(false);
+        this.spikeEvent = null;
     }
+
+    if(this.megaBossMoveEvent){
+        this.megaBossMoveEvent.remove(false);
+        this.megaBossMoveEvent = null;
+    }
+
+    this.bossShieldActive = false;
+
+    this.spikes.clear(true, true);
+
+    this.bossSplatSound.play({volume:0.8});
+    this.cameras.main.shake(800, 0.02);
+
+    if(this.megaBoss){
+        this.megaBoss.destroy();
+        this.megaBoss = null;
+    }
+
+    this.zombieTimer.paused = false;
+    this.levelPaused = false;
+}
 
         hitPlayer(player, zombie){
 
@@ -876,6 +880,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
