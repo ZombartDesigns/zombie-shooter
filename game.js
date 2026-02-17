@@ -539,51 +539,73 @@ class MainScene extends Phaser.Scene {
 
     return;
 }
-    hitZombie(bullet,zombie){
+    hitZombie(bullet, zombie){
+
         bullet.setActive(false);
         bullet.setVisible(false);
-        bullet.body.enable=false;
+        bullet.body.enable = false;
 
-        zombie.hp--;
-        if(zombie.hp>0) return;
+    // ===== MEGA BOSS DAMAGE =====
+    if(this.bossActive && zombie === this.megaBoss){
 
-        if(zombie.isBoss){
-            this.bossSplatSound.play({volume:0.4});
-            this.cameras.main.shake(400,0.012);
-        } else{
-            this.splatSound.play({volume:0.4});
+        if(this.bossShieldActive){
+            return; // shield up, no damage
         }
 
-        zombie.destroy();
+        this.bossHitCount++;
 
-        killMegaBoss(){
+        if(this.bossHitCount >= this.bossHitsRequired){
+            this.killMegaBoss();
+        }
 
-        this.bossActive = false;
-
-        this.bossSplatSound.play({volume:0.8});
-        this.cameras.main.shake(800, 0.02);
-
-        const explosion = this.add.image(this.megaBoss.x, this.megaBoss.y, "blood")
-            .setScale(1.2)
-            .setDepth(this.LAYERS.BLOOD);
-
-        this.megaBoss.destroy();
-        this.spikes.clear(true, true);
-
-        // Resume game
-        this.levelPaused = false;
-}
-        
-        const splat = this.add.image(zombie.x, zombie.y, "blood")
-            .setScale(zombie.isBoss ? 0.5 : 0.3)
-            .setAlpha(0.85)
-            .setDepth(this.LAYERS.BLOOD);
-
-        this.bloodSplats.push(splat);
-
-        this.score+=zombie.isBoss?50:10;
-        this.scoreText.setText("Score: "+this.score);
+        return;
     }
+
+    // ===== NORMAL ENEMIES =====
+    zombie.hp--;
+    if(zombie.hp > 0) return;
+
+    if(zombie.isBoss){
+        this.bossSplatSound.play({volume:0.4});
+        this.cameras.main.shake(400,0.012);
+    } else {
+        this.splatSound.play({volume:0.4});
+    }
+
+    zombie.destroy();
+
+    const splat = this.add.image(zombie.x, zombie.y, "blood")
+        .setScale(zombie.isBoss ? 0.5 : 0.3)
+        .setAlpha(0.85)
+        .setDepth(this.LAYERS.BLOOD);
+
+    this.bloodSplats.push(splat);
+
+    this.score += zombie.isBoss ? 50 : 10;
+    this.scoreText.setText("Score: " + this.score);
+}
+
+    killMegaBoss(){
+
+    this.bossActive = false;
+
+    if(this.spikeEvent){
+        this.spikeEvent.remove();
+    }
+
+    this.bossSplatSound.play({volume:0.8});
+    this.cameras.main.shake(800, 0.02);
+
+    const explosion = this.add.image(this.megaBoss.x, this.megaBoss.y, "blood")
+        .setScale(1.2)
+        .setDepth(this.LAYERS.BLOOD);
+
+    this.megaBoss.destroy();
+    this.spikes.clear(true, true);
+
+    // Resume level progression
+    this.levelPaused = false;
+}
         hitPlayer(player, zombie){
 
     if(this.isBladeShield){
@@ -649,10 +671,10 @@ class MainScene extends Phaser.Scene {
             this.bg.setTexture(bgKey);
             this.bg.setDisplaySize(800, 600);
 
-            // MEGA BOSS EVERY 10 LEVELS
             if(this.level % 10 === 0){
             this.spawnMegaBoss();
-            }
+            return; // stop normal spawning
+        }
 
             this.levelPaused = false;
             this.zombieTimer.paused = false;
@@ -759,3 +781,4 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
