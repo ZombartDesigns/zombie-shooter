@@ -299,8 +299,8 @@ class LoadingScene extends Phaser.Scene {
     });
 
     // ✅ Proper call
-    this.startSpikeCycle();
-}
+    this.startSpikeCycle(){
+        
     if(!this.bossActive) return;
 
     this.bossShieldActive = true;
@@ -311,6 +311,20 @@ class LoadingScene extends Phaser.Scene {
         callbackScope: this,
         repeat: 12
     });
+
+    this.time.delayedCall(5000, () => {
+
+        this.bossShieldActive = false;
+
+        this.time.delayedCall(2000, () => {
+            if(this.bossActive){
+                this.startSpikeCycle();
+            }
+        });
+
+    });
+}
+    
 
     this.time.delayedCall(5000, () => {
 
@@ -803,6 +817,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
