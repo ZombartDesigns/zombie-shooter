@@ -38,6 +38,10 @@ class MainScene extends Phaser.Scene {
         this.lives = 5;
         this.levelPaused = false;
 
+        this.isSpeedBoost = false;
+        this.isTripleFire = false;
+        this.isBladeShield = false;
+
         this.zombieSpeed = 60;
         this.killsToAdvance = 20;
         this.zombiesSpawned = 0;
@@ -181,9 +185,50 @@ class MainScene extends Phaser.Scene {
 
     }
         collectPowerup(player, item){
-            item.destroy();
-            this.powerupSound.play();
+
+    this.powerupSound.play();
+
+    const type = item.texture.key;
+    item.destroy();
+
+    // SPEED BOOST
+    if(type === "speedItem" && !this.isSpeedBoost){
+
+        this.isSpeedBoost = true;
+        this.playerSpeed = this.basePlayerSpeed * 2;
+        this.setPlayerGlow(0xffffff);
+
+        this.time.delayedCall(20000, () => {
+            this.playerSpeed = this.basePlayerSpeed;
+            this.isSpeedBoost = false;
+            this.setPlayerGlow(0xffff00);
+        });
     }
+
+    // TRIPLE FIRE
+    if(type === "multiItem" && !this.isTripleFire){
+
+        this.isTripleFire = true;
+        this.setPlayerGlow(0xff0000);
+
+        this.time.delayedCall(15000, () => {
+            this.isTripleFire = false;
+            this.setPlayerGlow(0xffff00);
+        });
+    }
+
+    // BLADE SHIELD
+    if(type === "bladeItem" && !this.isBladeShield){
+
+        this.isBladeShield = true;
+        this.setPlayerGlow(0x00ff00);
+
+        this.time.delayedCall(15000, () => {
+            this.isBladeShield = false;
+            this.setPlayerGlow(0xffff00);
+        });
+    }
+}}
 
     spawnPowerup(){
 
@@ -263,6 +308,20 @@ class MainScene extends Phaser.Scene {
     }
         hitPlayer(player, zombie){
 
+    if(this.isBladeShield){
+
+        zombie.destroy();
+
+        const splat = this.add.image(zombie.x, zombie.y, "blood")
+            .setScale(0.4)
+            .setAlpha(0.85)
+            .setDepth(this.LAYERS.BLOOD);
+
+        this.bloodSplats.push(splat);
+
+        return;
+    }
+
     zombie.destroy();
     this.loseLife();
 }
@@ -334,20 +393,35 @@ class MainScene extends Phaser.Scene {
     }
     
     shoot(){
-        if(this.levelPaused) return;
 
-        const b=this.bullets.get(this.player.x,this.player.y-18);
+    if(this.levelPaused) return;
+
+    const createBullet = (x, y, velocityX, velocityY) => {
+        const b = this.bullets.get(x, y);
         if(!b) return;
 
         b.setActive(true).setVisible(true);
         b.setScale(0.18);
-        b.body.enable=true;
+        b.body.enable = true;
         b.body.setSize(6,14,true);
-        b.setVelocityY(-520);
+        b.setVelocity(velocityX, velocityY);
 
-        b.postFX.clear();
-        b.postFX.addGlow(0xffff00,1);
+        if(b.postFX){
+            b.postFX.clear();
+            b.postFX.addGlow(0xffff00,1);
+        }
+    };
+
+    // Normal shot
+    createBullet(this.player.x, this.player.y - 18, 0, -520);
+
+    // Triple fire
+    if(this.isTripleFire){
+
+        createBullet(this.player.x, this.player.y - 18, -200, -520);
+        createBullet(this.player.x, this.player.y - 18, 200, -520);
     }
+}
 
     update(){
 
@@ -402,6 +476,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
 
 
 
