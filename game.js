@@ -124,9 +124,6 @@ class MainScene extends Phaser.Scene {
         this.spikes = this.physics.add.group();
         this.bossShieldActive = false;
 
-        this.physics.add.overlap(this.bullets, this.spikes, this.hitSpike, null, this);
-        this.physics.add.overlap(this.player, this.spikes, this.hitSpikePlayer, null, this);
-
         this.basePlayerSpeed = 220;
         this.playerSpeed = this.basePlayerSpeed;
 
@@ -192,6 +189,11 @@ class MainScene extends Phaser.Scene {
         this.bullets = this.physics.add.group({ defaultKey:"bullet", maxSize:40 });
         this.zombies = this.physics.add.group();
         this.powerups = this.physics.add.group();
+
+        this.spikes = this.physics.add.group();
+
+        this.physics.add.overlap(this.bullets, this.spikes, this.hitSpike, null, this);
+        this.physics.add.overlap(this.player, this.spikes, this.hitSpikePlayer, null, this);
 
         this.time.addEvent({
             delay:30000,
@@ -518,18 +520,6 @@ class MainScene extends Phaser.Scene {
 
     localStorage.setItem("zombieLeaderboard", JSON.stringify(scores));
 }
-    
-    // MEGA BOSS LOGIC
-    if(this.bossActive && zombie === this.megaBoss){
-
-        bullet.setActive(false);
-        bullet.setVisible(false);
-        bullet.body.enable = false;
-
-    // Shield must be down to damage boss
-    if(this.bossShieldActive){
-        return;
-    }
 
     this.bossHitCount++;
 
@@ -781,4 +771,5 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
