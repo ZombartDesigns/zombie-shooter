@@ -521,14 +521,6 @@ class MainScene extends Phaser.Scene {
     localStorage.setItem("zombieLeaderboard", JSON.stringify(scores));
 }
 
-    this.bossHitCount++;
-
-    if(this.bossHitCount >= this.bossHitsRequired){
-        this.killMegaBoss();
-    }
-
-    return;
-}
     hitZombie(bullet, zombie){
 
         bullet.setActive(false);
@@ -771,5 +763,6 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
