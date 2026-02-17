@@ -375,6 +375,7 @@ class MainScene extends Phaser.Scene {
             }
         });
     }
+}
 new Phaser.Game({
     type: Phaser.AUTO,
     width:800,
@@ -383,4 +384,5 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
 
