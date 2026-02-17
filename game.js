@@ -184,51 +184,51 @@ class MainScene extends Phaser.Scene {
         boss.postFX.addGlow(0xff0000, 2, 0, false, 0.25, 4);
 
     }
-        collectPowerup(player, item){
+    collectPowerup(player, item){
 
-    this.powerupSound.play();
+        this.powerupSound.play();
 
-    const type = item.texture.key;
-    item.destroy();
+        const type = item.texture.key;
+        item.destroy();
 
-    // SPEED BOOST
-    if(type === "speedItem" && !this.isSpeedBoost){
+        // SPEED BOOST
+        if(type === "speedItem" && !this.isSpeedBoost){
 
-        this.isSpeedBoost = true;
-        this.playerSpeed = this.basePlayerSpeed * 2;
-        this.setPlayerGlow(0xffffff);
+            this.isSpeedBoost = true;
+            this.playerSpeed = this.basePlayerSpeed * 2;
+            this.setPlayerGlow(0xffffff);
 
-        this.time.delayedCall(20000, () => {
-            this.playerSpeed = this.basePlayerSpeed;
-            this.isSpeedBoost = false;
-            this.setPlayerGlow(0xffff00);
+            this.time.delayedCall(20000, () => {
+                this.playerSpeed = this.basePlayerSpeed;
+                this.isSpeedBoost = false;
+                this.setPlayerGlow(0xffff00);
+            });
+        }
+
+        // TRIPLE FIRE
+        if(type === "multiItem" && !this.isTripleFire){
+    
+            this.isTripleFire = true;
+            this.setPlayerGlow(0xff0000);
+
+            this.time.delayedCall(15000, () => {
+                this.isTripleFire = false;
+                this.setPlayerGlow(0xffff00);
+            });
+        }
+
+        // BLADE SHIELD
+        if(type === "bladeItem" && !this.isBladeShield){
+
+            this.isBladeShield = true;
+            this.setPlayerGlow(0x00ff00);
+
+            this.time.delayedCall(15000, () => {
+                this.isBladeShield = false;
+                this.setPlayerGlow(0xffff00);
+            });
+        }
     }
-
-    // TRIPLE FIRE
-    if(type === "multiItem" && !this.isTripleFire){
-
-        this.isTripleFire = true;
-        this.setPlayerGlow(0xff0000);
-
-        this.time.delayedCall(15000, () => {
-            this.isTripleFire = false;
-            this.setPlayerGlow(0xffff00);
-        });
-    }
-
-    // BLADE SHIELD
-    if(type === "bladeItem" && !this.isBladeShield){
-
-        this.isBladeShield = true;
-        this.setPlayerGlow(0x00ff00);
-
-        this.time.delayedCall(15000, () => {
-            this.isBladeShield = false;
-            this.setPlayerGlow(0xffff00);
-        });
-    }
-}
-
     spawnPowerup(){
 
     if(this.levelPaused) return;
@@ -475,5 +475,6 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
 
 
