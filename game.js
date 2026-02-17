@@ -271,6 +271,7 @@ class LoadingScene extends Phaser.Scene {
 
 spawnMegaBoss(){
 
+    this.levelPaused = false;
     this.zombieTimer.paused = true;
     this.bossActive = true;
 
@@ -804,6 +805,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
