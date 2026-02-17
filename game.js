@@ -353,6 +353,12 @@ class MainScene extends Phaser.Scene {
                 z.destroy();
                 this.loseLife();
             }
+        this.bullets.children.each(b => {
+            if (b.active && b.y < -20) {
+                b.setActive(false);
+                b.setVisible(false);
+                b.body.enable = false;
+            }
         });
     }
 }
@@ -365,10 +371,3 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
-
-
-
-
-
-
-
