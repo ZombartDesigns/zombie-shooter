@@ -23,6 +23,7 @@ class MainScene extends Phaser.Scene {
 
         this.load.audio("splat", "assets/splat.wav");
         this.load.audio("bossSplat", "assets/boss_splat.wav");
+        this.load.audio("powerupSound", "assets/powerup.wav");
 
         this.load.audio("music1", "assets/music1.mp3");
         this.load.audio("music2", "assets/music2.mp3");
@@ -64,6 +65,7 @@ class MainScene extends Phaser.Scene {
 
         this.splatSound = this.sound.add("splat");
         this.bossSplatSound = this.sound.add("bossSplat");
+        this.powerupSound = this.sound.add("powerupSound", { volume: 0.5 });
 
         // ===== BACKGROUND =====
         this.bg = this.add.image(400, 300, "bg1")
@@ -181,6 +183,7 @@ class MainScene extends Phaser.Scene {
     }
         collectPowerup(player, item){
             item.destroy();
+            this.powerupSound.play();
     }
 
     spawnPowerup(){
@@ -397,6 +400,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
 
 
 
