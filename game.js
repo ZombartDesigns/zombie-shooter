@@ -302,37 +302,54 @@ class LoadingScene extends Phaser.Scene {
 
     }
 
-spawnMegaBoss(){
+    spawnMegaBoss(){
 
-    this.levelPaused = false;
-    this.zombieTimer.paused = true;
-    this.bossActive = true;
+        this.levelPaused = false;
+        this.zombieTimer.paused = true;
+        this.bossActive = true;
 
-    this.megaBoss = this.physics.add.sprite(400, 120, "boss")
-        .setScale(0.4)
-        .setDepth(this.LAYERS.ZOMBIE + 5)
-        .setCollideWorldBounds(true);
+        this.megaBoss = this.physics.add.sprite(400, 120, "boss")
+            .setScale(0.4)
+            .setDepth(this.LAYERS.ZOMBIE + 5)
+            .setCollideWorldBounds(true);
 
-    this.megaBoss.body.allowGravity = false;
+        this.megaBoss.body.allowGravity = false;
 
-    this.bossHitsRequired = 20;
-    this.bossHitCount = 0;
+        this.bossHitsRequired = 20;
+        this.bossHitCount = 0;
 
-    this.megaBoss.postFX.addGlow(0xff6600, 3);
+        this.megaBoss.postFX.addGlow(0xff6600, 3);
 
-    const bossSpeed = 80 + (this.level * 3);
+        const bossSpeed = 80 + (this.level * 3);
 
-    this.megaBossMoveEvent = this.time.addEvent({
-        delay: 1500,
-        loop: true,
-        callback: () => {
-            if(!this.bossActive) return;
-            const direction = Phaser.Math.Between(0,1) ? 1 : -1;
-            this.megaBoss.setVelocityX(direction * bossSpeed);
-        }
-    });
+        this.physics.add.overlap(this.bullets, this.megaBoss, this.hitMegaBoss, null, this);
+
+        this.megaBossMoveEvent = this.time.addEvent({
+            delay: 1500,
+            loop: true,
+            callback: () => {
+                if(!this.bossActive) return;
+                const direction = Phaser.Math.Between(0,1) ? 1 : -1;
+                this.megaBoss.setVelocityX(direction * bossSpeed);
+            }
+        });
 
     this.startSpikeCycle();
+}
+
+    hitMegaBoss(bullet, boss){
+
+    bullet.setActive(false);
+    bullet.setVisible(false);
+    bullet.body.enable = false;
+
+    if(this.bossShieldActive) return;
+
+    this.bossHitCount++;
+
+    if(this.bossHitCount >= this.bossHitsRequired){
+        this.killMegaBoss();
+    }
 }
 
     startSpikeCycle(){
@@ -345,7 +362,7 @@ spawnMegaBoss(){
         delay: 400,
         callback: this.spawnSpike,
         callbackScope: this,
-        repeat: 12
+        repeat: 4
     });
 
     this.time.delayedCall(5000, () => {
@@ -365,23 +382,23 @@ spawnMegaBoss(){
 
     if(!this.megaBoss) return;
 
-    const shardCount = 7;
-    const spreadAngle = 120;
+    const shardCount = 5;       // fewer shards
+    const spreadAngle = 80;     // narrower spread
 
     for(let i = 0; i < shardCount; i++){
 
         const angle = Phaser.Math.DegToRad(
-            -spreadAngle/2 + (spreadAngle/(shardCount-1)) * i
+            90 - spreadAngle/2 + (spreadAngle/(shardCount-1)) * i
         );
 
-        const speed = 200 + (this.level * 5);
+        const speed = 220 + (this.level * 5);
 
         const shard = this.spikes.create(
             this.megaBoss.x,
             this.megaBoss.y + 20,
             "shard"
         )
-        .setScale(0.08)
+        .setScale(0.15) // MAKE THEM SMALL
         .setDepth(this.LAYERS.ZOMBIE + 4);
 
         shard.setVelocity(
@@ -389,7 +406,7 @@ spawnMegaBoss(){
             Math.sin(angle) * speed
         );
 
-        shard.postFX.addGlow(0xff6600, 2);
+        shard.postFX.addGlow(0xff6600, 1.5);
     }
 }
         hitSpike(bullet, spike){
@@ -619,22 +636,7 @@ spawnMegaBoss(){
         bullet.setVisible(false);
         bullet.body.enable = false;
 
-    // ===== MEGA BOSS DAMAGE =====
-    if(this.bossActive && zombie === this.megaBoss){
-
-        if(this.bossShieldActive){
-            return; // shield up, no damage
-        }
-
-        this.bossHitCount++;
-
-        if(this.bossHitCount >= this.bossHitsRequired){
-            this.killMegaBoss();
-        }
-
-        return;
-    }
-
+   
     // ===== NORMAL ENEMIES =====
     zombie.hp--;
     if(zombie.hp > 0) return;
@@ -868,6 +870,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
