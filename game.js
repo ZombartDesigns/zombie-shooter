@@ -187,9 +187,9 @@ class LoadingScene extends Phaser.Scene {
     .setDepth(this.LAYERS.UI)
     .setVisible(false);
 
-// Listen for P key
-this.input.keyboard.on("keydown-P", () => {
-    this.togglePause();
+    // Listen for P key
+    this.input.keyboard.on("keydown-P", () => {
+        this.togglePause();
 });
 
         // ===== PLAYER =====
@@ -198,7 +198,7 @@ this.input.keyboard.on("keydown-P", () => {
             .setCollideWorldBounds(true)
             .setDepth(this.LAYERS.PLAYER);
 
-        this.setPlayerGlow(0xffff00);
+        this.updatePlayerGlow();
 
         // ===== INPUT =====
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -247,10 +247,26 @@ this.input.keyboard.on("keydown-P", () => {
         });
     }
 
-    setPlayerGlow(color){
-        if(this.player.postFX) this.player.postFX.clear();
+    updatePlayerGlow(){
+
+    let color = 0xffff00; // default yellow
+
+    // Highest priority first
+    if(this.isBladeShield){
+        color = 0x00ff00; // green
+    }
+    else if(this.isSpeedBoost){
+        color = 0xffffff; // white
+    }
+    else if(this.isTripleFire){
+        color = 0xff0000; // red
+    }
+
+    if(this.player.postFX){
+        this.player.postFX.clear();
         this.player.postFX.addGlow(color,1.5,0,false,0.25,4);
     }
+}
 
     spawnZombie(){
         if(this.levelPaused) return;
@@ -319,7 +335,7 @@ spawnMegaBoss(){
     this.startSpikeCycle();
 }
 
-startSpikeCycle(){
+    startSpikeCycle(){
 
     if(!this.bossActive) return;
 
@@ -345,7 +361,7 @@ startSpikeCycle(){
     });
 }
 
-spawnSpike(){
+    spawnSpike(){
 
     if(!this.megaBoss) return;
 
@@ -376,19 +392,19 @@ spawnSpike(){
         shard.postFX.addGlow(0xff6600, 2);
     }
 }
-    hitSpike(bullet, spike){
+        hitSpike(bullet, spike){
 
-    bullet.setActive(false);
-    bullet.setVisible(false);
-    bullet.body.enable = false;
+        bullet.setActive(false);
+        bullet.setVisible(false);
+        bullet.body.enable = false;
 
-    spike.destroy();
+        spike.destroy();
     }
 
-    hitSpikePlayer(player, spike){
+        hitSpikePlayer(player, spike){
 
-    spike.destroy();
-    this.loseLife();
+        spike.destroy();
+        this.loseLife();
     }
     
     collectPowerup(player, item){
@@ -403,36 +419,37 @@ spawnSpike(){
 
             this.isSpeedBoost = true;
             this.playerSpeed = this.basePlayerSpeed * 2;
-            this.setPlayerGlow(0xffffff);
+
+            this.updatePlayerGlow();
 
             this.time.delayedCall(20000, () => {
                 this.playerSpeed = this.basePlayerSpeed;
                 this.isSpeedBoost = false;
-                this.setPlayerGlow(0xffff00);
+                this.updatePlayerGlow();
             });
         }
 
         // TRIPLE FIRE
         if(type === "multiItem" && !this.isTripleFire){
-    
+
             this.isTripleFire = true;
-            this.setPlayerGlow(0xff0000);
+            this.updatePlayerGlow();
 
             this.time.delayedCall(15000, () => {
                 this.isTripleFire = false;
-                this.setPlayerGlow(0xffff00);
+                this.updatePlayerGlow();
             });
         }
 
-        // BLADE SHIELD
+        // BLADE SHIELD (IMMUNITY)
         if(type === "bladeItem" && !this.isBladeShield){
 
             this.isBladeShield = true;
-            this.setPlayerGlow(0x00ff00);
+            this.updatePlayerGlow();
 
             this.time.delayedCall(15000, () => {
                 this.isBladeShield = false;
-                this.setPlayerGlow(0xffff00);
+                this.updatePlayerGlow();
             });
         }
     }
@@ -851,6 +868,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
