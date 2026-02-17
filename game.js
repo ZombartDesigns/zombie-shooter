@@ -205,6 +205,24 @@ class MainScene extends Phaser.Scene {
         this.score+=zombie.isBoss?50:10;
         this.scoreText.setText("Score: "+this.score);
     }
+        hitPlayer(player, zombie){
+
+    zombie.destroy();
+    this.loseLife();
+}
+
+    loseLife(){
+
+        this.lives--;
+
+        if(this.hearts[this.lives]){
+            this.hearts[this.lives].setVisible(false);
+        }
+    
+        if(this.lives <= 0){
+            this.gameOver();
+        }
+    }
         nextLevel(){
 
     this.levelPaused = true;
@@ -276,7 +294,13 @@ class MainScene extends Phaser.Scene {
         if(this.cursors.down.isDown || this.keys.S.isDown) this.player.setVelocityY(this.playerSpeed);
 
         if(Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.shoot();
-    }
+
+        this.zombies.children.each(z => {
+        if(z.y > 620){
+            z.destroy();
+            this.loseLife();
+        }
+    });
 }
 
 new Phaser.Game({
@@ -287,4 +311,5 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
 
