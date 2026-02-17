@@ -271,10 +271,9 @@ class MainScene extends Phaser.Scene {
 
     spawnMegaBoss(){
 
-        this.levelPaused = true;
         this.zombieTimer.paused = true;
 
-        this.bossActive = true;
+        this.bossActive = true;;
 
         this.megaBoss = this.physics.add.sprite(400, 120, "boss")
             .setScale(0.4)
@@ -831,6 +830,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
