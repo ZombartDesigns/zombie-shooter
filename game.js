@@ -180,6 +180,55 @@ class MainScene extends Phaser.Scene {
         collectPowerup(player, item){
             item.destroy();
     }
+
+    spawnPowerup(){
+
+    if(this.levelPaused) return;
+
+    const types = ["speedItem","multiItem","bladeItem"];
+    const type = Phaser.Utils.Array.GetRandom(types);
+
+    const x = Phaser.Math.Between(80,720);
+    const y = Phaser.Math.Between(80,520);
+
+    const item = this.powerups.create(x,y,type);
+
+    item.setScale(0.06);
+    item.setDepth(this.LAYERS.ZOMBIE);
+
+    // Glow
+    if(type==="speedItem")
+        item.postFX.addGlow(0xffffff,2);
+
+    if(type==="multiItem")
+        item.postFX.addGlow(0xff8800,2);
+
+    if(type==="bladeItem")
+        item.postFX.addGlow(0x00ff00,2);
+}
+    gameOver(){
+
+    this.physics.pause();
+    this.levelPaused = true;
+
+    if(this.currentMusic){
+        this.currentMusic.stop();
+    }
+
+    this.add.text(
+        400,300,
+        "GAME OVER\nClick To Restart",
+        {
+            fontSize:"32px",
+            fill:"#fff",
+            align:"center"
+        }
+    ).setOrigin(0.5).setDepth(this.LAYERS.UI);
+
+    this.input.once("pointerdown",()=>{
+        this.scene.restart();
+    });
+}
     
     hitZombie(bullet,zombie){
         bullet.setActive(false);
@@ -315,6 +364,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
 
 
 
