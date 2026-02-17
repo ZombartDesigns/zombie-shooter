@@ -332,27 +332,41 @@ class MainScene extends Phaser.Scene {
     }
 
     update(){
+
         if (
-        !this.levelPaused &&
-        this.zombiesSpawned >= this.killsToAdvance &&
-        this.zombies.countActive(true) === 0
-    ) {
-        this.nextLevel();
-    }
+            !this.levelPaused &&
+            this.zombiesSpawned >= this.killsToAdvance &&
+            this.zombies.countActive(true) === 0
+        ) {
+            this.nextLevel();
+        }
+
         this.player.setVelocity(0);
 
-        if(this.cursors.left.isDown || this.keys.A.isDown) this.player.setVelocityX(-this.playerSpeed);
-        if(this.cursors.right.isDown || this.keys.D.isDown) this.player.setVelocityX(this.playerSpeed);
-        if(this.cursors.up.isDown || this.keys.W.isDown) this.player.setVelocityY(-this.playerSpeed);
-        if(this.cursors.down.isDown || this.keys.S.isDown) this.player.setVelocityY(this.playerSpeed);
+        if(this.cursors.left.isDown || this.keys.A.isDown)
+            this.player.setVelocityX(-this.playerSpeed);
+    
+        if(this.cursors.right.isDown || this.keys.D.isDown)
+            this.player.setVelocityX(this.playerSpeed);
 
-        if(Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.shoot();
+        if(this.cursors.up.isDown || this.keys.W.isDown)
+            this.player.setVelocityY(-this.playerSpeed);
 
+        if(this.cursors.down.isDown || this.keys.S.isDown)
+            this.player.setVelocityY(this.playerSpeed);
+
+        if(Phaser.Input.Keyboard.JustDown(this.keys.SPACE))
+            this.shoot();
+
+        // Zombie bottom check
         this.zombies.children.each(z => {
             if(z.y > 620){
                 z.destroy();
                 this.loseLife();
             }
+        });
+
+        // Bullet cleanup (POOL FIX)
         this.bullets.children.each(b => {
             if (b.active && b.y < -20) {
                 b.setActive(false);
@@ -361,8 +375,6 @@ class MainScene extends Phaser.Scene {
             }
         });
     }
-}
-
 new Phaser.Game({
     type: Phaser.AUTO,
     width:800,
@@ -371,3 +383,4 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
