@@ -115,6 +115,18 @@ class MainScene extends Phaser.Scene {
         this.killsToAdvance = 20;
         this.zombiesSpawned = 0;
 
+        // ===== MEGA BOSS SYSTEM =====
+        this.megaBoss = null;
+        this.bossActive = false;
+        this.bossHitsRequired = 20;
+        this.bossHitCount = 0;
+
+        this.spikes = this.physics.add.group();
+        this.bossShieldActive = false;
+
+        this.physics.add.overlap(this.bullets, this.spikes, this.hitSpike, null, this);
+        this.physics.add.overlap(this.player, this.spikes, this.hitSpikePlayer, null, this);
+
         this.basePlayerSpeed = 220;
         this.playerSpeed = this.basePlayerSpeed;
 
@@ -253,6 +265,82 @@ class MainScene extends Phaser.Scene {
         boss.postFX.addGlow(0xff0000, 2, 0, false, 0.25, 4);
 
     }
+
+        spawnMegaBoss(){
+
+        this.levelPaused = true;
+        this.bossActive = true;
+
+        this.megaBoss = this.physics.add.sprite(400, 200, "boss")
+            .setScale(0.4)
+            .setDepth(this.LAYERS.ZOMBIE + 5);
+
+        this.megaBoss.hp = this.bossHitsRequired;
+        this.bossHitCount = 0;
+
+        this.megaBoss.postFX.addGlow(0xff6600, 3);
+
+        // Start spike waves
+        this.startSpikeCycle();
+    }
+
+    startSpikeCycle(){
+
+    if(!this.bossActive) return;
+
+    this.bossShieldActive = true;
+
+    // Fire spikes every 400ms for 5 seconds
+    this.spikeEvent = this.time.addEvent({
+        delay: 400,
+        callback: this.spawnSpike,
+        callbackScope: this,
+        repeat: 12   // ~5 seconds
+    });
+
+    // Stop firing after 5 seconds
+    this.time.delayedCall(5000, () => {
+
+        this.bossShieldActive = false;
+
+        // Wait 2 seconds then restart cycle
+        this.time.delayedCall(2000, () => {
+            if(this.bossActive){
+                this.startSpikeCycle();
+            }
+        });
+
+    });
+}
+
+    spawnSpike(){
+
+    const x = Phaser.Math.Between(50, 750);
+
+    const spike = this.spikes.create(x, 0, "boss")
+        .setScale(0.08)
+        .setTint(0xff8800)
+        .setDepth(this.LAYERS.ZOMBIE + 4);
+
+    spike.setVelocityY(300);
+    spike.postFX.addGlow(0xff6600, 2);
+}
+
+    hitSpike(bullet, spike){
+
+    bullet.setActive(false);
+    bullet.setVisible(false);
+    bullet.body.enable = false;
+
+    spike.destroy();
+}
+
+    hitSpikePlayer(player, spike){
+
+    spike.destroy();
+    this.loseLife();
+}
+    
     collectPowerup(player, item){
 
         this.powerupSound.play();
@@ -431,6 +519,26 @@ class MainScene extends Phaser.Scene {
     localStorage.setItem("zombieLeaderboard", JSON.stringify(scores));
 }
     
+    // MEGA BOSS LOGIC
+    if(this.bossActive && zombie === this.megaBoss){
+
+        bullet.setActive(false);
+        bullet.setVisible(false);
+        bullet.body.enable = false;
+
+    // Shield must be down to damage boss
+    if(this.bossShieldActive){
+        return;
+    }
+
+    this.bossHitCount++;
+
+    if(this.bossHitCount >= this.bossHitsRequired){
+        this.killMegaBoss();
+    }
+
+    return;
+}
     hitZombie(bullet,zombie){
         bullet.setActive(false);
         bullet.setVisible(false);
@@ -448,6 +556,24 @@ class MainScene extends Phaser.Scene {
 
         zombie.destroy();
 
+        killMegaBoss(){
+
+        this.bossActive = false;
+
+        this.bossSplatSound.play({volume:0.8});
+        this.cameras.main.shake(800, 0.02);
+
+        const explosion = this.add.image(this.megaBoss.x, this.megaBoss.y, "blood")
+            .setScale(1.2)
+            .setDepth(this.LAYERS.BLOOD);
+
+        this.megaBoss.destroy();
+        this.spikes.clear(true, true);
+
+        // Resume game
+        this.levelPaused = false;
+}
+        
         const splat = this.add.image(zombie.x, zombie.y, "blood")
             .setScale(zombie.isBoss ? 0.5 : 0.3)
             .setAlpha(0.85)
@@ -522,6 +648,11 @@ class MainScene extends Phaser.Scene {
             const bgKey = this.backgrounds[(this.level - 1) % this.backgrounds.length];
             this.bg.setTexture(bgKey);
             this.bg.setDisplaySize(800, 600);
+
+            // MEGA BOSS EVERY 10 LEVELS
+            if(this.level % 10 === 0){
+            this.spawnMegaBoss();
+            }
 
             this.levelPaused = false;
             this.zombieTimer.paused = false;
@@ -628,13 +759,3 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
-
-
-
-
-
-
-
-
-
-
