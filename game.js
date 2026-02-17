@@ -307,6 +307,7 @@ class MainScene extends Phaser.Scene {
 
         const bgKey = this.backgrounds[(this.level - 1) % this.backgrounds.length];
         this.bg.setTexture(bgKey);
+        this.bg.setDisplaySize(800, 600);
 
         this.levelPaused = false;
         this.zombieTimer.paused = false;
@@ -364,6 +365,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
 
 
 
