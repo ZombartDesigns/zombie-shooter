@@ -176,6 +176,8 @@ class MainScene extends Phaser.Scene {
         boss.setDepth(this.LAYERS.ZOMBIE + 1);
 
         boss.postFX.addGlow(0xff0000, 2, 0, false, 0.25, 4);
+
+          this.zombiesSpawned++;
     }
         collectPowerup(player, item){
             item.destroy();
@@ -275,45 +277,57 @@ class MainScene extends Phaser.Scene {
             this.gameOver();
         }
     }
-        nextLevel(){
+    nextLevel(){
 
-    this.levelPaused = true;
-    this.zombieTimer.paused = true;
+        this.levelPaused = true;
+        this.zombieTimer.paused = true;
 
-    const msg = this.add.text(
-        400, 300,
-        `LEVEL ${this.level} COMPLETE`,
-        {
-            fontSize: "32px",
-            fill: "#fff",
-            stroke: "#000",
-            strokeThickness: 4
-        }
-    ).setOrigin(0.5).setDepth(this.LAYERS.UI);
+        const msg = this.add.text(
+            400, 300,
+            `LEVEL ${this.level} COMPLETE`,
+            {
+                fontSize: "32px",
+                fill: "#fff",
+                stroke: "#000",
+                strokeThickness: 4
+            }
+        ).setOrigin(0.5).setDepth(this.LAYERS.UI);
 
-    this.time.delayedCall(2000, () => {
+        this.time.delayedCall(2000, () => {
 
-        msg.destroy();
+            msg.destroy();
 
-        // 🔥 FIX LAG — clear blood
-        this.bloodSplats.forEach(b => b.destroy());
-        this.bloodSplats = [];
+            this.bloodSplats.forEach(b => b.destroy());
+            this.bloodSplats = [];
 
-        this.level++;
-        this.levelText.setText("Level: " + this.level);
+            this.level++;
+            this.levelText.setText("Level: " + this.level);
 
-        this.zombiesSpawned = 0;
-        this.zombieSpeed += 5;
+            this.zombiesSpawned = 0;
+            this.zombieSpeed += 5;
 
-        const bgKey = this.backgrounds[(this.level - 1) % this.backgrounds.length];
-        this.bg.setTexture(bgKey);
-        this.bg.setDisplaySize(800, 600);
+            const bgKey = this.backgrounds[(this.level - 1) % this.backgrounds.length];
+            this.bg.setTexture(bgKey);
+            this.bg.setDisplaySize(800, 600);
 
-        this.levelPaused = false;
-        this.zombieTimer.paused = false;
+            this.levelPaused = false;
+            this.zombieTimer.paused = false;
 
-    });
-}
+            if(this.level % 5 === 0){
+
+                for(let i = 0; i < 3; i++){
+
+                    this.time.delayedCall(i * 1500, () => {
+                        if(!this.levelPaused){
+                            this.spawnBoss();
+                        }
+                    });
+
+                }
+            }
+
+        });
+    }
 
     shoot(){
         if(this.levelPaused) return;
@@ -384,5 +398,6 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
 
 
