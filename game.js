@@ -303,11 +303,6 @@ class LoadingScene extends Phaser.Scene {
     });
 
     // Start shard waves
-    this.startSpikeCycle();
-    }
-
-    this.startSpikeCycle();
-    }
 
     startSpikeCycle(){
 
@@ -634,10 +629,7 @@ class LoadingScene extends Phaser.Scene {
         this.zombieTimer.paused = false;
         this.levelPaused = false;
     }
-        // Resume level progression
-        this.levelPaused = false;
-        this.zombieTimer.paused = false;
-    }
+
         hitPlayer(player, zombie){
 
     if(this.isBladeShield){
@@ -819,4 +811,5 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
