@@ -50,6 +50,17 @@ class MainScene extends Phaser.Scene {
         this.multiFireActive = false;
         this.bladeShieldActive = false;
 
+        this.LAYERS = {
+        BG: 0,
+        BLOOD: 1,
+        ZOMBIE: 5,
+        PLAYER: 10,
+        UI: 1000
+    };
+
+        splat.setDepth(this.LAYERS.BLOOD);
+        this.scoreText.setDepth(this.LAYERS.UI);
+        
        // ===== MUSIC START =====
         this.musicTracks = [
             this.sound.add("music1", { volume: 0.5 }),
@@ -427,5 +438,6 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
 
 
