@@ -205,6 +205,44 @@ class MainScene extends Phaser.Scene {
         this.score+=zombie.isBoss?50:10;
         this.scoreText.setText("Score: "+this.score);
     }
+        nextLevel(){
+
+    this.levelPaused = true;
+    this.zombieTimer.paused = true;
+
+    const msg = this.add.text(
+        400, 300,
+        `LEVEL ${this.level} COMPLETE`,
+        {
+            fontSize: "32px",
+            fill: "#fff",
+            stroke: "#000",
+            strokeThickness: 4
+        }
+    ).setOrigin(0.5).setDepth(this.LAYERS.UI);
+
+    this.time.delayedCall(2000, () => {
+
+        msg.destroy();
+
+        // 🔥 FIX LAG — clear blood
+        this.bloodSplats.forEach(b => b.destroy());
+        this.bloodSplats = [];
+
+        this.level++;
+        this.levelText.setText("Level: " + this.level);
+
+        this.zombiesSpawned = 0;
+        this.zombieSpeed += 5;
+
+        const bgKey = this.backgrounds[(this.level - 1) % this.backgrounds.length];
+        this.bg.setTexture(bgKey);
+
+        this.levelPaused = false;
+        this.zombieTimer.paused = false;
+
+    });
+}
 
     shoot(){
         if(this.levelPaused) return;
@@ -223,6 +261,13 @@ class MainScene extends Phaser.Scene {
     }
 
     update(){
+        if (
+        !this.levelPaused &&
+        this.zombiesSpawned >= this.killsToAdvance &&
+        this.zombies.countActive(true) === 0
+    ) {
+        this.nextLevel();
+    }
         this.player.setVelocity(0);
 
         if(this.cursors.left.isDown || this.keys.A.isDown) this.player.setVelocityX(-this.playerSpeed);
@@ -242,3 +287,4 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
