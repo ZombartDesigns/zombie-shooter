@@ -271,35 +271,41 @@ class MainScene extends Phaser.Scene {
 
     spawnMegaBoss(){
 
-        this.zombieTimer.paused = true;
+    this.zombieTimer.paused = true;
+    this.bossActive = true;
 
-        this.bossActive = true;;
+    this.megaBoss = this.physics.add.sprite(400, 120, "boss")
+        .setScale(0.4)
+        .setDepth(this.LAYERS.ZOMBIE + 5)
+        .setCollideWorldBounds(true);
 
-        this.megaBoss = this.physics.add.sprite(400, 120, "boss")
-            .setScale(0.4)
-            .setDepth(this.LAYERS.ZOMBIE + 5)
-            .setCollideWorldBounds(true);
+    this.megaBoss.body.allowGravity = false;
 
-        this.megaBoss.body.allowGravity = false;
-        this.megaBoss.setVelocityX(this.zombieSpeed * 2);
+    this.bossHitsRequired = 20;
+    this.bossHitCount = 0;
 
-        this.bossHitsRequired = 20;
-        this.bossHitCount = 0;
+    this.megaBoss.postFX.addGlow(0xff6600, 3);
 
-        this.megaBoss.postFX.addGlow(0xff6600, 3);
+    // Movement speed scales with level
+    const bossSpeed = 80 + (this.level * 3);
 
-        // Change direction every 1–2 seconds randomly
-        this.time.addEvent({
-            delay: Phaser.Math.Between(1000,2000),
-            loop: true,
-            callback: () => {
+    // Change direction every 1.5 seconds
+    this.megaBossMoveEvent = this.time.addEvent({
+        delay: 1500,
+        loop: true,
+        callback: () => {
 
-                if(!this.bossActive) return;
+            if(!this.bossActive) return;
 
-                const direction = Phaser.Math.Between(0,1) ? 1 : -1;
-                this.megaBoss.setVelocityX(direction * (this.zombieSpeed * 2));
+            const direction = Phaser.Math.Between(0,1) ? 1 : -1;
+            this.megaBoss.setVelocityX(direction * bossSpeed);
+        }
+    });
 
-                // Boss movement speed scales with level
+    // Start shard waves
+    this.startSpikeCycle();
+}
+        // Boss movement speed scales with level
         this.megaBossSpeed = 80 + (this.level * 3);
 
         // Random horizontal movement
@@ -831,6 +837,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
