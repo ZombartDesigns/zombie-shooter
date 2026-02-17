@@ -202,7 +202,6 @@ class MainScene extends Phaser.Scene {
             this.playerSpeed = this.basePlayerSpeed;
             this.isSpeedBoost = false;
             this.setPlayerGlow(0xffff00);
-        });
     }
 
     // TRIPLE FIRE
@@ -476,3 +475,4 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
