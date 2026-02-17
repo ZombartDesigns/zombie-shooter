@@ -305,28 +305,6 @@ class LoadingScene extends Phaser.Scene {
     // Start shard waves
     this.startSpikeCycle();
     }
-        // Boss movement speed scales with level
-        this.megaBossSpeed = 80 + (this.level * 3);
-
-        // Random horizontal movement
-        this.megaBossMoveEvent = this.time.addEvent({
-            delay: 2000,
-            loop: true,
-            callback: () => {
-
-        if(!this.bossActive) return;
-
-        const targetX = Phaser.Math.Between(150, 650);
-
-        this.tweens.add({
-            targets: this.megaBoss,
-            x: targetX,
-            duration: 1000,
-            ease: "Sine.easeInOut"
-        });
-
-    }
-    });
 
     this.startSpikeCycle();
     }
@@ -654,6 +632,7 @@ class LoadingScene extends Phaser.Scene {
         this.spikes.clear(true, true);
 
         this.zombieTimer.paused = false;
+        this.levelPaused = false;
     }
         // Resume level progression
         this.levelPaused = false;
@@ -840,3 +819,4 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
