@@ -1,36 +1,67 @@
-class StartScene extends Phaser.Scene {
+class LoadingScene extends Phaser.Scene {
     constructor(){
-        super("StartScene");
+        super("LoadingScene");
+    }
+
+    preload(){
+
+        // LOAD SAME IMAGES USED IN GAME
+        this.load.image("bg1", "assets/background1.png");
+        this.load.image("player", "assets/player.png");
+        this.load.image("zombie", "assets/zombie.png");
     }
 
     create(){
 
-        // Background (reuse your level background)
+        // Background
         this.add.image(400, 300, "bg1")
-            .setDisplaySize(800,600)
-            .setAlpha(0.6);
+            .setDisplaySize(800, 600)
+            .setAlpha(0.4);
 
-        // Player image (left)
+        // Player Image (left)
         this.add.image(250, 350, "player")
-            .setScale(0.3);
+            .setScale(0.25);
 
-        // Zombie image (right)
+        // Zombie Image (right)
         this.add.image(550, 350, "zombie")
-            .setScale(0.3);
+            .setScale(0.25);
 
-        this.add.text(400,150,"ZOMBIE SHOOTER",{
-            fontSize:"48px",
-            fill:"#ffffff",
-            stroke:"#000",
-            strokeThickness:6
+        // Title
+        this.add.text(400, 120, "ZOMBIE SHOOTER", {
+            fontSize: "48px",
+            fill: "#ffffff",
+            stroke: "#000",
+            strokeThickness: 6
         }).setOrigin(0.5);
 
-        this.add.text(400,500,"CLICK TO START",{
-            fontSize:"24px",
-            fill:"#ffffff"
+        // Leaderboard Title
+        this.add.text(400, 190, "TOP 5", {
+            fontSize: "28px",
+            fill: "#ffcc00"
         }).setOrigin(0.5);
 
-        this.input.once("pointerdown",()=>{
+        // Load leaderboard
+        const scores = JSON.parse(localStorage.getItem("zombieLeaderboard")) || [];
+
+        for(let i = 0; i < 5; i++){
+
+            const entry = scores[i];
+            const text = entry ? `${i+1}. ${entry.name} - ${entry.score}` 
+                               : `${i+1}. ---`;
+
+            this.add.text(400, 230 + (i * 30), text, {
+                fontSize: "22px",
+                fill: "#ffffff"
+            }).setOrigin(0.5);
+        }
+
+        // Start Text
+        this.add.text(400, 520, "CLICK TO START", {
+            fontSize: "26px",
+            fill: "#00ff00"
+        }).setOrigin(0.5);
+
+        this.input.once("pointerdown", () => {
             this.scene.start("MainScene");
         });
     }
@@ -596,6 +627,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [StartScene, MainScene]
 });
+
 
 
 
