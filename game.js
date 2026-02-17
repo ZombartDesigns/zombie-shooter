@@ -625,8 +625,9 @@ new Phaser.Game({
     height:600,
     parent:"game-container",
     physics:{ default:"arcade", arcade:{debug:false}},
-    scene: [StartScene, MainScene]
+    scene: [LoadingScene, MainScene]
 });
+
 
 
 
