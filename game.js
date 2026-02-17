@@ -369,7 +369,7 @@ class MainScene extends Phaser.Scene {
             const playerName = nameInput.value.toUpperCase() || "AAA";
 
             // Save leaderboard
-            let leaderboard = JSON.parse(localStorage.getItem("leaderboard")) || [];
+            let leaderboard = JSON.parse(localStorage.getItem("zombieLeaderboard")) || [];
 
             leaderboard.push({ name: playerName, score: this.score });
 
@@ -377,7 +377,7 @@ class MainScene extends Phaser.Scene {
 
             leaderboard = leaderboard.slice(0,5);
 
-            localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
+            localStorage.setItem("zombieLeaderboard", JSON.stringify(leaderboard));
 
             document.body.removeChild(nameInput);
 
@@ -628,6 +628,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
