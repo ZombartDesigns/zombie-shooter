@@ -227,7 +227,7 @@ class MainScene extends Phaser.Scene {
             this.setPlayerGlow(0xffff00);
         });
     }
-}}
+}
 
     spawnPowerup(){
 
@@ -475,4 +475,5 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
 
