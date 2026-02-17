@@ -268,23 +268,42 @@ class MainScene extends Phaser.Scene {
 
     }
 
-        spawnMegaBoss(){
+    spawnMegaBoss(){
 
         this.levelPaused = true;
+        this.zombieTimer.paused = true;
+
         this.bossActive = true;
 
-        this.megaBoss = this.physics.add.sprite(400, 200, "boss")
+        this.megaBoss = this.physics.add.sprite(400, 120, "boss")
             .setScale(0.4)
-            .setDepth(this.LAYERS.ZOMBIE + 5);
+            .setDepth(this.LAYERS.ZOMBIE + 5)
+            .setCollideWorldBounds(true);
 
-        this.megaBoss.hp = this.bossHitsRequired;
+        this.megaBoss.body.allowGravity = false;
+        this.megaBoss.setVelocityX(this.zombieSpeed * 2);
+
+        this.bossHitsRequired = 20;
         this.bossHitCount = 0;
 
         this.megaBoss.postFX.addGlow(0xff6600, 3);
 
-        // Start spike waves
-        this.startSpikeCycle();
-    }
+        // Change direction every 1–2 seconds randomly
+        this.time.addEvent({
+            delay: Phaser.Math.Between(1000,2000),
+            loop: true,
+            callback: () => {
+
+                if(!this.bossActive) return;
+
+                const direction = Phaser.Math.Between(0,1) ? 1 : -1;
+                this.megaBoss.setVelocityX(direction * (this.zombieSpeed * 2));
+
+            }
+        });
+
+    this.startSpikeCycle();
+}
 
     startSpikeCycle(){
 
@@ -317,15 +336,38 @@ class MainScene extends Phaser.Scene {
 
     spawnSpike(){
 
-    const x = Phaser.Math.Between(50, 750);
+        if(!this.megaBoss || !this.bossActive) return;
 
-    const spike = this.spikes.create(x, 0, "boss")
+        const totalShards = 7;
+        const spreadAngle = 120; // degrees
+        const startAngle = -90 - (spreadAngle / 2);
+
+        for(let i = 0; i < totalShards; i++){
+
+            const angle = Phaser.Math.DegToRad(
+                startAngle + (spreadAngle / (totalShards - 1)) * i
+        );
+
+        const speed = 250 + (this.zombieSpeed * 2);
+
+        const spike = this.spikes.create(
+            this.megaBoss.x,
+            this.megaBoss.y + 20,
+            "boss"
+        )
         .setScale(0.08)
         .setTint(0xff8800)
         .setDepth(this.LAYERS.ZOMBIE + 4);
 
-    spike.setVelocityY(300);
-    spike.postFX.addGlow(0xff6600, 2);
+        spike.body.allowGravity = false;
+
+        spike.setVelocity(
+            Math.cos(angle) * speed,
+            Math.sin(angle) * speed
+        );
+
+        spike.postFX.addGlow(0xff6600, 2);
+    }
 }
 
     hitSpike(bullet, spike){
@@ -763,6 +805,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
