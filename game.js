@@ -301,29 +301,21 @@ class LoadingScene extends Phaser.Scene {
     // ✅ Proper call
     this.startSpikeCycle();
 }
-    // Start shard waves
-
-    this.startSpikeCycle();
-    {
-
     if(!this.bossActive) return;
 
     this.bossShieldActive = true;
 
-    // Fire spikes every 400ms for 5 seconds
     this.spikeEvent = this.time.addEvent({
         delay: 400,
         callback: this.spawnSpike,
         callbackScope: this,
-        repeat: 12   // ~5 seconds
+        repeat: 12
     });
 
-    // Stop firing after 5 seconds
     this.time.delayedCall(5000, () => {
 
         this.bossShieldActive = false;
 
-        // Wait 2 seconds then restart cycle
         this.time.delayedCall(2000, () => {
             if(this.bossActive){
                 this.startSpikeCycle();
@@ -331,7 +323,7 @@ class LoadingScene extends Phaser.Scene {
         });
 
     });
-    }
+}
 
     spawnSpike(){
 
@@ -811,6 +803,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
