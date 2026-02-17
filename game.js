@@ -66,10 +66,10 @@ class LoadingScene extends Phaser.Scene {
             this.scene.start("MainScene");
         });
     }
-}
-class MainScene extends Phaser.Scene {
-    constructor() {
-        super("MainScene");
+    }
+        class MainScene extends Phaser.Scene {
+            constructor() {
+                super("MainScene");
     }
 
     preload() {
@@ -304,7 +304,7 @@ class MainScene extends Phaser.Scene {
 
     // Start shard waves
     this.startSpikeCycle();
-}
+    }
         // Boss movement speed scales with level
         this.megaBossSpeed = 80 + (this.level * 3);
 
@@ -326,10 +326,10 @@ class MainScene extends Phaser.Scene {
         });
 
     }
-});
+    });
 
     this.startSpikeCycle();
-}
+    }
 
     startSpikeCycle(){
 
@@ -358,7 +358,7 @@ class MainScene extends Phaser.Scene {
         });
 
     });
-}
+    }
 
     spawnSpike(){
 
@@ -390,8 +390,8 @@ class MainScene extends Phaser.Scene {
         );
 
         shard.postFX.addGlow(0xff6600, 2);
+        }
     }
-}
     hitSpike(bullet, spike){
 
     bullet.setActive(false);
@@ -399,13 +399,13 @@ class MainScene extends Phaser.Scene {
     bullet.body.enable = false;
 
     spike.destroy();
-}
+    }
 
     hitSpikePlayer(player, spike){
 
     spike.destroy();
     this.loseLife();
-}
+    }
     
     collectPowerup(player, item){
 
@@ -539,7 +539,7 @@ class MainScene extends Phaser.Scene {
             this.scene.start("LoadingScene");
         }
     });
-}
+    }
     askForName(){
 
     const input = document.createElement("input");
@@ -571,7 +571,7 @@ class MainScene extends Phaser.Scene {
             this.scene.restart();
         }
     });
-}
+    }
     saveScore(name, score){
 
     let scores = JSON.parse(localStorage.getItem("zombieLeaderboard")) || [];
@@ -583,7 +583,7 @@ class MainScene extends Phaser.Scene {
     scores = scores.slice(0,5);
 
     localStorage.setItem("zombieLeaderboard", JSON.stringify(scores));
-}
+    }
 
     hitZombie(bullet, zombie){
 
@@ -629,33 +629,36 @@ class MainScene extends Phaser.Scene {
 
     this.score += zombie.isBoss ? 50 : 10;
     this.scoreText.setText("Score: " + this.score);
-}
+    }
 
     killMegaBoss(){
 
-    this.bossActive = false;
+        this.bossActive = false;
 
-    if(this.spikeEvent){
-        this.spikeEvent.remove();
+        if(this.spikeEvent){
+            this.spikeEvent.remove();
+        }
 
-    if(this.megaBossMoveEvent){
-    this.megaBossMoveEvent.remove();
+        if(this.megaBossMoveEvent){
+            this.megaBossMoveEvent.remove();
+        }
+
+        this.bossSplatSound.play({volume:0.8});
+        this.cameras.main.shake(800, 0.02);
+
+        const explosion = this.add.image(this.megaBoss.x, this.megaBoss.y, "blood")
+            .setScale(1.2)
+            .setDepth(this.LAYERS.BLOOD);
+
+        this.megaBoss.destroy();
+        this.spikes.clear(true, true);
+
+        this.zombieTimer.paused = false;
     }
-
-    this.bossSplatSound.play({volume:0.8});
-    this.cameras.main.shake(800, 0.02);
-
-    const explosion = this.add.image(this.megaBoss.x, this.megaBoss.y, "blood")
-        .setScale(1.2)
-        .setDepth(this.LAYERS.BLOOD);
-
-    this.megaBoss.destroy();
-    this.spikes.clear(true, true);
-
-    // Resume level progression
-    this.levelPaused = false;
-    this.zombieTimer.paused = false;
-}
+        // Resume level progression
+        this.levelPaused = false;
+        this.zombieTimer.paused = false;
+    }
         hitPlayer(player, zombie){
 
     if(this.isBladeShield){
@@ -674,7 +677,7 @@ class MainScene extends Phaser.Scene {
 
     zombie.destroy();
     this.loseLife();
-}
+    }
 
     loseLife(){
 
@@ -837,11 +840,3 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
-
-
-
-
-
-
-
-
