@@ -304,7 +304,8 @@ class LoadingScene extends Phaser.Scene {
 
     // Start shard waves
 
-    startSpikeCycle(){
+    this.startSpikeCycle();
+    {
 
     if(!this.bossActive) return;
 
@@ -811,5 +812,6 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
