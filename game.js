@@ -269,40 +269,39 @@ class LoadingScene extends Phaser.Scene {
 
     }
 
-    spawnMegaBoss(){
+spawnMegaBoss(){
 
-        this.zombieTimer.paused = true;
-        this.bossActive = true;
+    this.zombieTimer.paused = true;
+    this.bossActive = true;
 
-        this.megaBoss = this.physics.add.sprite(400, 120, "boss")
-            .setScale(0.4)
-            .setDepth(this.LAYERS.ZOMBIE + 5)
-            .setCollideWorldBounds(true);
+    this.megaBoss = this.physics.add.sprite(400, 120, "boss")
+        .setScale(0.4)
+        .setDepth(this.LAYERS.ZOMBIE + 5)
+        .setCollideWorldBounds(true);
 
-        this.megaBoss.body.allowGravity = false;
+    this.megaBoss.body.allowGravity = false;
 
-        this.bossHitsRequired = 20;
-        this.bossHitCount = 0;
+    this.bossHitsRequired = 20;
+    this.bossHitCount = 0;
 
-        this.megaBoss.postFX.addGlow(0xff6600, 3);
+    this.megaBoss.postFX.addGlow(0xff6600, 3);
 
-        const bossSpeed = 80 + (this.level * 3);
+    const bossSpeed = 80 + (this.level * 3);
 
-        this.megaBossMoveEvent = this.time.addEvent({
-            delay: 1500,
-            loop: true,
-            callback: () => {
-                if(!this.bossActive) return;
-                const direction = Phaser.Math.Between(0,1) ? 1 : -1;
-                this.megaBoss.setVelocityX(direction * bossSpeed);
+    this.megaBossMoveEvent = this.time.addEvent({
+        delay: 1500,
+        loop: true,
+        callback: () => {
+            if(!this.bossActive) return;
+            const direction = Phaser.Math.Between(0,1) ? 1 : -1;
+            this.megaBoss.setVelocityX(direction * bossSpeed);
         }
     });
 
-    // ✅ Proper call
     this.startSpikeCycle();
-{
+}
 
-    startSpikeCycle(){
+startSpikeCycle(){
 
     if(!this.bossActive) return;
 
@@ -327,60 +326,21 @@ class LoadingScene extends Phaser.Scene {
 
     });
 }
-    
-    if(!this.bossActive) return;
 
-    this.bossShieldActive = true;
+spawnSpike(){
 
-    this.spikeEvent = this.time.addEvent({
-        delay: 400,
-        callback: this.spawnSpike,
-        callbackScope: this,
-        repeat: 12
-    });
+    if(!this.megaBoss) return;
 
-    this.time.delayedCall(5000, () => {
+    const shardCount = 7;
+    const spreadAngle = 120;
 
-        this.bossShieldActive = false;
+    for(let i = 0; i < shardCount; i++){
 
-        this.time.delayedCall(2000, () => {
-            if(this.bossActive){
-                this.startSpikeCycle();
-            }
-        });
-
-    });
-}
-    
-
-    this.time.delayedCall(5000, () => {
-
-        this.bossShieldActive = false;
-
-        this.time.delayedCall(2000, () => {
-            if(this.bossActive){
-                this.startSpikeCycle();
-            }
-        });
-
-    });
-}
-
-    spawnSpike(){
-
-        if(!this.megaBoss) return;
-
-        const shardCount = 7; // number of shards per wave
-        const spreadAngle = 120; // total spread arc in degrees
-
-        for(let i = 0; i < shardCount; i++){
-
-        // Calculate angle
         const angle = Phaser.Math.DegToRad(
             -spreadAngle/2 + (spreadAngle/(shardCount-1)) * i
         );
 
-        const speed = 200 + (this.level * 5); // scales with level
+        const speed = 200 + (this.level * 5);
 
         const shard = this.spikes.create(
             this.megaBoss.x,
@@ -396,8 +356,8 @@ class LoadingScene extends Phaser.Scene {
         );
 
         shard.postFX.addGlow(0xff6600, 2);
-        }
     }
+}
     hitSpike(bullet, spike){
 
     bullet.setActive(false);
@@ -844,6 +804,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
