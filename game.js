@@ -176,11 +176,11 @@ class MainScene extends Phaser.Scene {
         boss.setDepth(this.LAYERS.ZOMBIE + 1);
 
         boss.postFX.addGlow(0xff0000, 2, 0, false, 0.25, 4);
-        
-        collectPowerup(player, item){
-        item.destroy();
     }
-
+        collectPowerup(player, item){
+            item.destroy();
+    }
+    
     hitZombie(bullet,zombie){
         bullet.setActive(false);
         bullet.setVisible(false);
@@ -314,6 +314,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
 
 
 
