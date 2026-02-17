@@ -4,7 +4,6 @@ class MainScene extends Phaser.Scene {
     }
 
     preload() {
-
         this.load.image("bg1", "assets/background1.png");
         this.load.image("bg2", "assets/background2.png");
         this.load.image("bg3", "assets/background3.png");
@@ -39,29 +38,21 @@ class MainScene extends Phaser.Scene {
         this.levelPaused = false;
 
         this.zombieSpeed = 60;
-        this.killsThisLevel = 0;
         this.killsToAdvance = 20;
         this.zombiesSpawned = 0;
 
         this.basePlayerSpeed = 220;
         this.playerSpeed = this.basePlayerSpeed;
 
-        this.speedBoostActive = false;
-        this.multiFireActive = false;
-        this.bladeShieldActive = false;
-
         this.LAYERS = {
-        BG: 0,
-        BLOOD: 1,
-        ZOMBIE: 5,
-        PLAYER: 10,
-        UI: 1000
-    };
+            BG: 0,
+            BLOOD: 1,
+            ZOMBIE: 5,
+            PLAYER: 10,
+            UI: 1000
+        };
 
-        splat.setDepth(this.LAYERS.BLOOD);
-        this.scoreText.setDepth(this.LAYERS.UI);
-        
-       // ===== MUSIC START =====
+        // ===== MUSIC =====
         this.musicTracks = [
             this.sound.add("music1", { volume: 0.5 }),
             this.sound.add("music2", { volume: 0.5 }),
@@ -70,30 +61,44 @@ class MainScene extends Phaser.Scene {
 
         this.currentTrackIndex = 0;
         this.playNextTrack();
-        
+
         this.splatSound = this.sound.add("splat");
         this.bossSplatSound = this.sound.add("bossSplat");
 
-        this.bg = this.add.image(400, 300, "bg1");
-        this.bg.setDisplaySize(800, 600);
-        this.bg.setAlpha(0.5);
+        // ===== BACKGROUND =====
+        this.bg = this.add.image(400, 300, "bg1")
+            .setDisplaySize(800, 600)
+            .setAlpha(0.5)
+            .setDepth(this.LAYERS.BG);
 
         this.bloodSplats = [];
 
-        this.scoreText = this.add.text(10, 8, "Score: 0", { fontSize: "16px", fill: "#fff", stroke:"#000", strokeThickness:3 });
-        this.levelText = this.add.text(10, 28, "Level: 1", { fontSize: "16px", fill: "#fff", stroke:"#000", strokeThickness:3 });
+        // ===== UI =====
+        this.scoreText = this.add.text(10, 8, "Score: 0",
+            { fontSize: "16px", fill: "#fff", stroke:"#000", strokeThickness:3 }
+        ).setDepth(this.LAYERS.UI);
+
+        this.levelText = this.add.text(10, 28, "Level: 1",
+            { fontSize: "16px", fill: "#fff", stroke:"#000", strokeThickness:3 }
+        ).setDepth(this.LAYERS.UI);
 
         this.hearts = [];
         for (let i = 0; i < 5; i++) {
-            const h = this.add.image(650 + i * 20, 30, "heart").setScale(0.1);
+            const h = this.add.image(650 + i * 20, 30, "heart")
+                .setScale(0.1)
+                .setDepth(this.LAYERS.UI);
             this.hearts.push(h);
         }
 
-        this.player = this.physics.add.sprite(400, 540, "player");
-        this.player.setScale(0.15);
-        this.player.setCollideWorldBounds(true);
+        // ===== PLAYER =====
+        this.player = this.physics.add.sprite(400, 540, "player")
+            .setScale(0.15)
+            .setCollideWorldBounds(true)
+            .setDepth(this.LAYERS.PLAYER);
+
         this.setPlayerGlow(0xffff00);
 
+        // ===== INPUT =====
         this.cursors = this.input.keyboard.createCursorKeys();
         this.keys = this.input.keyboard.addKeys("W,A,S,D,SPACE");
 
@@ -121,175 +126,64 @@ class MainScene extends Phaser.Scene {
         this.physics.add.overlap(this.player,this.zombies,this.hitPlayer,null,this);
     }
 
-   // ===== LEVEL COMPLETE =====
-        nextLevel(){
+    playNextTrack(){
+        if(this.currentMusic) this.currentMusic.stop();
 
-            this.levelPaused = true;
-            this.zombieTimer.paused = true;
-            this.zombies.clear(true, true);
+        this.currentMusic = this.musicTracks[this.currentTrackIndex];
+        this.currentMusic.play();
 
-            const msg = this.add.text(
-                400, 300,
-                `LEVEL ${this.level} COMPLETE`,
-        {
-            fontSize: "32px",
-            fill: "#fff",
-            stroke: "#000",
-            strokeThickness: 4
-        }
-    ).setOrigin(0.5);
-
-    this.time.delayedCall(2000, () => {
-
-        msg.destroy();
-
-        this.bloodSplats.forEach(b => b.destroy());
-        this.bloodSplats = [];
-
-        this.level++;
-        this.levelText.setText("Level: " + this.level);
-
-        this.zombiesSpawned = 0;
-        this.killsThisLevel = 0;
-
-        this.zombieSpeed += 5;
-
-        const bgKey = this.backgrounds[(this.level - 1) % this.backgrounds.length];
-        this.bg.setTexture(bgKey);
-        this.bg.setDisplaySize(800, 600);
-
-        this.levelPaused = false;
-        this.zombieTimer.paused = false;
-
-        // ===== BOSS SPAWN EVERY 5 LEVELS =====
-        if(this.level % 5 === 0){
-
-            for(let i = 0; i < 3; i++){
-
-                const delay = Phaser.Math.Between(3000, 15000);
-
-                this.time.delayedCall(delay, () => {
-                    if(!this.levelPaused){
-                        this.spawnBoss();
-                    }
-                });
-            }
-        }
-
-    });
-}
-
-    // ===== POWERUPS =====
-        spawnPowerup(){
-
-        if(this.levelPaused) return;
-
-        const types = ["speedItem","multiItem","bladeItem"];
-        const type = Phaser.Utils.Array.GetRandom(types);
-
-        const x = Phaser.Math.Between(80,720);
-        const y = Phaser.Math.Between(80,520);
-
-        const item = this.powerups.create(x,y,type);
-
-        item.setScale(0.06);  // smaller
-        item.type = type;
-
-        if(type==="speedItem") 
-            item.postFX.addGlow(0xffffff, 2.5, 0, false, 0.3, 8);
-
-        if(type==="multiItem") 
-            item.postFX.addGlow(0xff8800, 2.5, 0, false, 0.3, 8);
-
-        if(type==="bladeItem") 
-            item.postFX.addGlow(0x00ff00, 2.5, 0, false, 0.3, 8);
-
-        // pulse animation
-        this.tweens.add({
-            targets: item,
-            scale: 0.065,
-            duration: 800,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
+        this.currentMusic.once("complete", () => {
+            this.currentTrackIndex++;
+            if(this.currentTrackIndex >= this.musicTracks.length)
+                this.currentTrackIndex = 0;
+            this.playNextTrack();
         });
     }
 
-    collectPowerup(player,item){
-
-        const type = item.type;
-        item.destroy();
-
-        if(type==="speedItem"){
-            this.playerSpeed = this.basePlayerSpeed * 2;
-            this.setPlayerGlow(0xffffff);
-
-            this.time.delayedCall(20000,()=>{
-                this.playerSpeed = this.basePlayerSpeed;
-                this.setPlayerGlow(0xffff00);
-            });
-        }
-
-        if(type==="multiItem"){
-            this.multiFireActive = true;
-            this.setPlayerGlow(0xff0000);
-
-            this.time.delayedCall(15000,()=>{
-                this.multiFireActive = false;
-                this.setPlayerGlow(0xffff00);
-            });
-        }
-
-        if(type==="bladeItem"){
-            this.bladeShieldActive = true;
-            this.setPlayerGlow(0x00ff00);
-
-            this.time.delayedCall(15000,()=>{
-                this.bladeShieldActive = false;
-                this.setPlayerGlow(0xffff00);
-            });
-        }
-    }
-
-    // ===== PLAYER GLOW =====
     setPlayerGlow(color){
         if(this.player.postFX) this.player.postFX.clear();
         this.player.postFX.addGlow(color,1.5,0,false,0.25,4);
     }
-   
-    playNextTrack(){
 
-    // Stop any existing track
-    if(this.currentMusic){
-        this.currentMusic.stop();
+    spawnZombie(){
+        if(this.levelPaused) return;
+        if(this.zombiesSpawned>=this.killsToAdvance) return;
+
+        const x=Phaser.Math.Between(50,750);
+        const z=this.zombies.create(x,-40,"zombie");
+
+        z.setScale(0.15);
+        z.setVelocityY(this.zombieSpeed);
+        z.hp=1;
+        z.isBoss=false;
+        z.setDepth(this.LAYERS.ZOMBIE);
+
+        z.postFX.addGlow(0xff0000,1.2,0,false,0.15,3);
+
+        this.zombiesSpawned++;
     }
 
-    // Play current track
-    this.currentMusic = this.musicTracks[this.currentTrackIndex];
-    this.currentMusic.play();
+    spawnBoss(){
+        if(this.levelPaused) return;
 
-    // When track ends → move to next
-    this.currentMusic.once("complete", () => {
+        const x = Phaser.Math.Between(60,740);
+        const boss = this.zombies.create(x, -60, "boss");
 
-        this.currentTrackIndex++;
+        boss.setScale(0.18);
+        boss.setVelocityY(this.zombieSpeed * 0.5);
+        boss.hp = 3;
+        boss.isBoss = true;
+        boss.setDepth(this.LAYERS.ZOMBIE + 1);
 
-        if(this.currentTrackIndex >= this.musicTracks.length){
-            this.currentTrackIndex = 0; // loop back to first
-        }
+        boss.postFX.addGlow(0xff0000, 2, 0, false, 0.25, 4);
+    }
 
-        this.playNextTrack();
-    });
-}
-
-    // ===== ZOMBIE HIT =====
     hitZombie(bullet,zombie){
-
         bullet.setActive(false);
         bullet.setVisible(false);
         bullet.body.enable=false;
 
         zombie.hp--;
-
         if(zombie.hp>0) return;
 
         if(zombie.isBoss){
@@ -304,78 +198,12 @@ class MainScene extends Phaser.Scene {
         const splat = this.add.image(zombie.x, zombie.y, "blood")
             .setScale(zombie.isBoss ? 0.5 : 0.3)
             .setAlpha(0.85)
-            .setDepth(1);   // 🔥 LOW depth
+            .setDepth(this.LAYERS.BLOOD);
 
         this.bloodSplats.push(splat);
 
         this.score+=zombie.isBoss?50:10;
-        this.killsThisLevel++;
         this.scoreText.setText("Score: "+this.score);
-    }
-
-    hitPlayer(player,zombie){
-        zombie.destroy();
-        this.loseLife();
-    }
-
-    loseLife(){
-        this.lives--;
-        if(this.hearts[this.lives]) this.hearts[this.lives].setVisible(false);
-        if(this.lives<=0) this.gameOver();
-    }
-
-    gameOver(){
-
-    this.physics.pause();
-
-    // STOP MUSIC
-    if(this.currentMusic){
-        this.currentMusic.stop();
-    }
-
-    this.add.text(
-        400,300,
-        "GAME OVER\nClick To Restart",
-        {fontSize:"32px",fill:"#fff",align:"center"}
-    ).setOrigin(0.5);
-
-    this.input.once("pointerdown",()=>{
-        this.scene.restart();
-    });
-}
-
-    spawnZombie(){
-        if(this.levelPaused) return;
-        if(this.zombiesSpawned>=this.killsToAdvance) return;
-
-        const x=Phaser.Math.Between(50,750);
-        const z=this.zombies.create(x,-40,"zombie");
-
-        z.setScale(0.15);
-        z.setVelocityY(this.zombieSpeed);
-        z.hp=1;
-        z.isBoss=false;
-        z.setDepth(5);   // ABOVE blood
-        boss.setDepth(6);  // slightly higher if you want
-
-        z.postFX.addGlow(0xff0000,1.2,0,false,0.15,3);
-
-        this.zombiesSpawned++;
-    }
-        spawnBoss(){
-
-            if(this.levelPaused) return;
-
-            const x = Phaser.Math.Between(60,740);
-            const boss = this.zombies.create(x, -60, "boss");
-
-            boss.setScale(0.18);
-            boss.setVelocityY(this.zombieSpeed * 0.5);
-
-            boss.hp = 3;
-            boss.isBoss = true;
-
-            boss.postFX.addGlow(0xff0000, 2, 0, false, 0.25, 4);
     }
 
     shoot(){
@@ -395,15 +223,6 @@ class MainScene extends Phaser.Scene {
     }
 
     update(){
-
-        if (
-            !this.levelPaused &&
-            this.zombiesSpawned >= this.killsToAdvance &&
-            this.zombies.countActive(true) === 0
-        ) {
-            this.nextLevel();
-        }
-
         this.player.setVelocity(0);
 
         if(this.cursors.left.isDown || this.keys.A.isDown) this.player.setVelocityX(-this.playerSpeed);
@@ -412,21 +231,6 @@ class MainScene extends Phaser.Scene {
         if(this.cursors.down.isDown || this.keys.S.isDown) this.player.setVelocityY(this.playerSpeed);
 
         if(Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.shoot();
-
-        this.zombies.children.each(z=>{
-            if(z.y>620){
-                z.destroy();
-                this.loseLife();
-            }
-        });
-
-        this.bullets.children.each(b=>{
-            if(b.active && b.y<-20){
-                b.setActive(false);
-                b.setVisible(false);
-                b.body.enable=false;
-            }
-        });
     }
 }
 
@@ -438,6 +242,3 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
-
-
-
