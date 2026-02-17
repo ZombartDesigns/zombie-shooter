@@ -382,7 +382,7 @@ class LoadingScene extends Phaser.Scene {
 
     if(!this.megaBoss) return;
 
-    const shardCount = 5;       // fewer shards
+    const shardCount = 4;       // fewer shards
     const spreadAngle = 80;     // narrower spread
 
     for(let i = 0; i < shardCount; i++){
@@ -398,7 +398,7 @@ class LoadingScene extends Phaser.Scene {
             this.megaBoss.y + 20,
             "shard"
         )
-        .setScale(0.15) // MAKE THEM SMALL
+        .setScale(0.08) // MAKE THEM SMALL
         .setDepth(this.LAYERS.ZOMBIE + 4);
 
         shard.setVelocity(
@@ -870,6 +870,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
