@@ -648,6 +648,7 @@ class MainScene extends Phaser.Scene {
 
     // Resume level progression
     this.levelPaused = false;
+    this.zombieTimer.paused = false;
 }
         hitPlayer(player, zombie){
 
@@ -830,6 +831,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
