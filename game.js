@@ -174,6 +174,23 @@ class LoadingScene extends Phaser.Scene {
                 .setDepth(this.LAYERS.UI);
             this.hearts.push(h);
         }
+        // ===== PAUSE SYSTEM =====
+    this.isGamePaused = false;
+
+    this.pauseText = this.add.text(400, 300, "PAUSED", {
+        fontSize: "48px",
+        fill: "#ffffff",
+        stroke: "#000",
+        strokeThickness: 6
+    })
+    .setOrigin(0.5)
+    .setDepth(this.LAYERS.UI)
+    .setVisible(false);
+
+// Listen for P key
+this.input.keyboard.on("keydown-P", () => {
+    this.togglePause();
+});
 
         // ===== PLAYER =====
         this.player = this.physics.add.sprite(400, 540, "player")
@@ -444,6 +461,33 @@ spawnSpike(){
     if(type==="bladeItem")
         item.postFX.addGlow(0x00ff00,2);
     }
+
+    togglePause(){
+
+    if(this.isGamePaused){
+
+        // RESUME
+        this.physics.resume();
+        this.isGamePaused = false;
+        this.pauseText.setVisible(false);
+
+        if(this.currentMusic){
+            this.currentMusic.resume();
+        }
+
+    } else {
+
+        // PAUSE
+        this.physics.pause();
+        this.isGamePaused = true;
+        this.pauseText.setVisible(true);
+
+        if(this.currentMusic){
+            this.currentMusic.pause();
+        }
+    }
+}
+            
     gameOver(){
 
     this.physics.pause();
@@ -717,7 +761,7 @@ spawnSpike(){
     
     shoot(){
 
-    if(this.levelPaused) return;
+    if(this.levelPaused || this.isGamePaused) return;
 
     const createBullet = (x, y, velocityX, velocityY) => {
         const b = this.bullets.get(x, y);
@@ -748,6 +792,8 @@ spawnSpike(){
 
     update(){
 
+        if(this.isGamePaused) return;
+        
         if (
             !this.levelPaused &&
             this.zombiesSpawned >= this.killsToAdvance &&
@@ -805,6 +851,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
