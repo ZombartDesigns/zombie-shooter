@@ -61,7 +61,8 @@ class LoadingScene extends Phaser.Scene {
             fill: "#00ff00"
         }).setOrigin(0.5);
 
-        this.input.once("pointerdown", () => {
+        // SPACEBAR TO START
+        this.input.keyboard.once("keydown-SPACE", () => {
             this.scene.start("MainScene");
         });
     }
@@ -627,6 +628,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
