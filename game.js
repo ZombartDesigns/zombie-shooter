@@ -347,7 +347,7 @@ spawnSpike(){
             this.megaBoss.y + 20,
             "shard"
         )
-        .setScale(0.6)
+        .setScale(0.08)
         .setDepth(this.LAYERS.ZOMBIE + 4);
 
         shard.setVelocity(
@@ -804,6 +804,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
