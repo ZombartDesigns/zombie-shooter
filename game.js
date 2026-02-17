@@ -154,7 +154,7 @@ class MainScene extends Phaser.Scene {
     }
 
     // ===== POWERUPS =====
-    spawnPowerup(){
+        spawnPowerup(){
 
         if(this.levelPaused) return;
 
@@ -165,12 +165,28 @@ class MainScene extends Phaser.Scene {
         const y = Phaser.Math.Between(80,520);
 
         const item = this.powerups.create(x,y,type);
-        item.setScale(0.08);
+
+        item.setScale(0.06);  // smaller
         item.type = type;
 
-        if(type==="speedItem") item.postFX.addGlow(0xffffff,1.5);
-        if(type==="multiItem") item.postFX.addGlow(0xff8800,1.5);
-        if(type==="bladeItem") item.postFX.addGlow(0x00ff00,1.5);
+        if(type==="speedItem") 
+            item.postFX.addGlow(0xffffff, 2.5, 0, false, 0.3, 8);
+
+        if(type==="multiItem") 
+            item.postFX.addGlow(0xff8800, 2.5, 0, false, 0.3, 8);
+
+        if(type==="bladeItem") 
+            item.postFX.addGlow(0x00ff00, 2.5, 0, false, 0.3, 8);
+
+        // pulse animation
+        this.tweens.add({
+            targets: item,
+            scale: 0.065,
+            duration: 800,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
     }
 
     collectPowerup(player,item){
@@ -344,3 +360,4 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
