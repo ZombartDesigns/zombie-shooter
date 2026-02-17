@@ -3,60 +3,36 @@ class StartScene extends Phaser.Scene {
         super("StartScene");
     }
 
-    preload(){
-        // Load only what we need for menu
-        this.load.image("menuBG", "assets/background1.png");
-        this.load.image("banner", "assets/banner.png");
-    }
-
     create(){
 
-        // Background
-        this.add.image(400,300,"menuBG")
+        // Background (reuse your level background)
+        this.add.image(400, 300, "bg1")
             .setDisplaySize(800,600)
             .setAlpha(0.6);
 
-        // Title banner
-        this.add.image(400,120,"banner")
-            .setScale(0.7);
+        // Player image (left)
+        this.add.image(250, 350, "player")
+            .setScale(0.3);
 
-        // Click text
-        this.add.text(400,450,"CLICK TO START",{
-            fontSize:"32px",
+        // Zombie image (right)
+        this.add.image(550, 350, "zombie")
+            .setScale(0.3);
+
+        this.add.text(400,150,"ZOMBIE SHOOTER",{
+            fontSize:"48px",
             fill:"#ffffff",
             stroke:"#000",
             strokeThickness:6
         }).setOrigin(0.5);
 
-        // Show leaderboard
-        this.showLeaderboard();
+        this.add.text(400,500,"CLICK TO START",{
+            fontSize:"24px",
+            fill:"#ffffff"
+        }).setOrigin(0.5);
 
         this.input.once("pointerdown",()=>{
             this.scene.start("MainScene");
         });
-    }
-
-    showLeaderboard(){
-
-        let scores = JSON.parse(localStorage.getItem("zombieLeaderboard")) || [];
-
-        this.add.text(400,220,"TOP SURVIVORS",{
-            fontSize:"28px",
-            fill:"#ffcc00"
-        }).setOrigin(0.5);
-
-        for(let i=0;i<5;i++){
-
-            let entry = scores[i];
-            let text = entry 
-                ? `${i+1}. ${entry.name} - ${entry.score}`
-                : `${i+1}. ---`;
-
-            this.add.text(400,260 + i*30,text,{
-                fontSize:"20px",
-                fill:"#ffffff"
-            }).setOrigin(0.5);
-        }
     }
 }
 class MainScene extends Phaser.Scene {
@@ -314,7 +290,7 @@ class MainScene extends Phaser.Scene {
 
     if(type==="bladeItem")
         item.postFX.addGlow(0x00ff00,2);
-}
+    }
     gameOver(){
 
     this.physics.pause();
@@ -324,27 +300,59 @@ class MainScene extends Phaser.Scene {
         this.currentMusic.stop();
     }
 
+    const centerX = 400;
+    const centerY = 300;
+
+    // NAME INPUT ABOVE GAME OVER
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.maxLength = 3;
+    nameInput.placeholder = "AAA";
+    nameInput.style.position = "absolute";
+    nameInput.style.left = "50%";
+    nameInput.style.top = "40%";
+    nameInput.style.transform = "translate(-50%, -50%)";
+    nameInput.style.fontSize = "28px";
+    nameInput.style.textTransform = "uppercase";
+    nameInput.style.textAlign = "center";
+    nameInput.style.width = "80px";
+    document.body.appendChild(nameInput);
+    nameInput.focus();
+
+    // GAME OVER TEXT (below input)
     this.add.text(
-        400,240,
-        "GAME OVER",
+        centerX,
+        centerY,
+        "GAME OVER\nPress ENTER",
         {
-            fontSize:"40px",
-            fill:"#ff0000",
-            stroke:"#000",
-            strokeThickness:6
+            fontSize:"32px",
+            fill:"#fff",
+            align:"center"
         }
     ).setOrigin(0.5).setDepth(this.LAYERS.UI);
 
-    this.add.text(
-        400,285,
-        `FINAL SCORE: ${this.score}`,
-        {
-            fontSize:"26px",
-            fill:"#ffffff"
-        }
-    ).setOrigin(0.5).setDepth(this.LAYERS.UI);
+    nameInput.addEventListener("keydown",(event)=>{
+        if(event.key === "Enter"){
 
-    this.askForName();
+            const playerName = nameInput.value.toUpperCase() || "AAA";
+
+            // Save leaderboard
+            let leaderboard = JSON.parse(localStorage.getItem("leaderboard")) || [];
+
+            leaderboard.push({ name: playerName, score: this.score });
+
+            leaderboard.sort((a,b)=>b.score-a.score);
+
+            leaderboard = leaderboard.slice(0,5);
+
+            localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
+
+            document.body.removeChild(nameInput);
+
+            // Go back to loading screen
+            this.scene.start("StartScene");
+        }
+    });
 }
     askForName(){
 
@@ -588,6 +596,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [StartScene, MainScene]
 });
+
 
 
 
