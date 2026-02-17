@@ -111,47 +111,63 @@ class MainScene extends Phaser.Scene {
         this.physics.add.overlap(this.player,this.zombies,this.hitPlayer,null,this);
     }
 
-    // ===== LEVEL COMPLETE =====
-    nextLevel(){
+   // ===== LEVEL COMPLETE =====
+nextLevel(){
 
-        this.levelPaused = true;
-        this.zombieTimer.paused = true;
-        this.zombies.clear(true, true);
+    this.levelPaused = true;
+    this.zombieTimer.paused = true;
+    this.zombies.clear(true, true);
 
-        const msg = this.add.text(
-            400, 300,
-            `LEVEL ${this.level} COMPLETE`,
-            {
-                fontSize: "32px",
-                fill: "#fff",
-                stroke: "#000",
-                strokeThickness: 4
+    const msg = this.add.text(
+        400, 300,
+        `LEVEL ${this.level} COMPLETE`,
+        {
+            fontSize: "32px",
+            fill: "#fff",
+            stroke: "#000",
+            strokeThickness: 4
+        }
+    ).setOrigin(0.5);
+
+    this.time.delayedCall(2000, () => {
+
+        msg.destroy();
+
+        this.bloodSplats.forEach(b => b.destroy());
+        this.bloodSplats = [];
+
+        this.level++;
+        this.levelText.setText("Level: " + this.level);
+
+        this.zombiesSpawned = 0;
+        this.killsThisLevel = 0;
+
+        this.zombieSpeed += 5;
+
+        const bgKey = this.backgrounds[(this.level - 1) % this.backgrounds.length];
+        this.bg.setTexture(bgKey);
+        this.bg.setDisplaySize(800, 600);
+
+        this.levelPaused = false;
+        this.zombieTimer.paused = false;
+
+        // ===== BOSS SPAWN EVERY 5 LEVELS =====
+        if(this.level % 5 === 0){
+
+            for(let i = 0; i < 3; i++){
+
+                const delay = Phaser.Math.Between(3000, 15000);
+
+                this.time.delayedCall(delay, () => {
+                    if(!this.levelPaused){
+                        this.spawnBoss();
+                    }
+                });
             }
-        ).setOrigin(0.5);
+        }
 
-        this.time.delayedCall(2000, () => {
-
-            msg.destroy();
-
-            this.bloodSplats.forEach(b => b.destroy());
-            this.bloodSplats = [];
-
-            this.level++;
-            this.levelText.setText("Level: " + this.level);
-
-            this.zombiesSpawned = 0;
-            this.killsThisLevel = 0;
-
-            this.zombieSpeed += 5;
-
-            const bgKey = this.backgrounds[(this.level - 1) % this.backgrounds.length];
-            this.bg.setTexture(bgKey);
-            this.bg.setDisplaySize(800, 600);
-
-            this.levelPaused = false;
-            this.zombieTimer.paused = false;
-        });
-    }
+    });
+}
 
     // ===== POWERUPS =====
         spawnPowerup(){
@@ -375,5 +391,3 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
-
-
