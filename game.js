@@ -179,7 +179,6 @@ class MainScene extends Phaser.Scene {
 
         boss.postFX.addGlow(0xff0000, 2, 0, false, 0.25, 4);
 
-          this.zombiesSpawned++;
     }
         collectPowerup(player, item){
             item.destroy();
@@ -403,6 +402,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
 
 
 
