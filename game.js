@@ -50,17 +50,16 @@ class MainScene extends Phaser.Scene {
         this.multiFireActive = false;
         this.bladeShieldActive = false;
 
-        // ===== MUSIC START =====
-        if (!this.sound.get("music1")) {
-            this.musicTracks = [
-                this.sound.add("music1", { volume: 0.5 }),
-                this.sound.add("music2", { volume: 0.5 }),
-                this.sound.add("music3", { volume: 0.5 })
-            ];
-            this.currentTrackIndex = 0;
-            this.musicTracks[this.currentTrackIndex].play();
-        }
+       // ===== MUSIC START =====
+        this.musicTracks = [
+            this.sound.add("music1", { volume: 0.5 }),
+            this.sound.add("music2", { volume: 0.5 }),
+            this.sound.add("music3", { volume: 0.5 })
+        ];
 
+        this.currentTrackIndex = 0;
+        this.playNextTrack();
+        
         this.splatSound = this.sound.add("splat");
         this.bossSplatSound = this.sound.add("bossSplat");
 
@@ -112,15 +111,15 @@ class MainScene extends Phaser.Scene {
     }
 
    // ===== LEVEL COMPLETE =====
-nextLevel(){
+        nextLevel(){
 
-    this.levelPaused = true;
-    this.zombieTimer.paused = true;
-    this.zombies.clear(true, true);
+            this.levelPaused = true;
+            this.zombieTimer.paused = true;
+            this.zombies.clear(true, true);
 
-    const msg = this.add.text(
-        400, 300,
-        `LEVEL ${this.level} COMPLETE`,
+            const msg = this.add.text(
+                400, 300,
+                `LEVEL ${this.level} COMPLETE`,
         {
             fontSize: "32px",
             fill: "#fff",
@@ -246,6 +245,30 @@ nextLevel(){
         if(this.player.postFX) this.player.postFX.clear();
         this.player.postFX.addGlow(color,1.5,0,false,0.25,4);
     }
+   
+    playNextTrack(){
+
+    // Stop any existing track
+    if(this.currentMusic){
+        this.currentMusic.stop();
+    }
+
+    // Play current track
+    this.currentMusic = this.musicTracks[this.currentTrackIndex];
+    this.currentMusic.play();
+
+    // When track ends → move to next
+    this.currentMusic.once("complete", () => {
+
+        this.currentTrackIndex++;
+
+        if(this.currentTrackIndex >= this.musicTracks.length){
+            this.currentTrackIndex = 0; // loop back to first
+        }
+
+        this.playNextTrack();
+    });
+}
 
     // ===== ZOMBIE HIT =====
     hitZombie(bullet,zombie){
@@ -290,14 +313,24 @@ nextLevel(){
     }
 
     gameOver(){
-        this.physics.pause();
-        this.add.text(400,300,"GAME OVER\nClick To Restart",
-            {fontSize:"32px",fill:"#fff",align:"center"}).setOrigin(0.5);
 
-        this.input.once("pointerdown",()=>{
-            this.scene.restart();
-        });
+    this.physics.pause();
+
+    // STOP MUSIC
+    if(this.currentMusic){
+        this.currentMusic.stop();
     }
+
+    this.add.text(
+        400,300,
+        "GAME OVER\nClick To Restart",
+        {fontSize:"32px",fill:"#fff",align:"center"}
+    ).setOrigin(0.5);
+
+    this.input.once("pointerdown",()=>{
+        this.scene.restart();
+    });
+}
 
     spawnZombie(){
         if(this.levelPaused) return;
@@ -391,3 +424,4 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene:MainScene
 });
+
