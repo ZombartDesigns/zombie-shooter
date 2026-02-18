@@ -941,7 +941,3 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
-
-
-
-
