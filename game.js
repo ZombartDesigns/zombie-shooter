@@ -472,10 +472,16 @@ class LoadingScene extends Phaser.Scene {
 
         hitSpikePlayer(player, spike){
 
-        spike.destroy();
-        this.loseLife();
+    // ✅ If blade shield is active → immune to shards
+    if(this.isBladeShield){
+        spike.destroy();  // destroy shard
+        return;           // no damage
     }
-    
+
+    // ❌ No shield → take damage
+    spike.destroy();
+    this.loseLife();
+}
     collectPowerup(player, item){
 
         this.powerupSound.play();
@@ -926,5 +932,6 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
