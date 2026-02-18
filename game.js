@@ -365,7 +365,7 @@ this.input.keyboard.on("keydown-B", () => {
 
     }
 
-    spawnMegaBoss(){
+        spawnMegaBoss(){
 
         this.levelPaused = false;
         this.zombieTimer.paused = true;
@@ -377,9 +377,9 @@ this.input.keyboard.on("keydown-B", () => {
             .setCollideWorldBounds(true);
 
         this.megaBoss.setImmovable(true);
-    this.megaBoss.body.setAllowGravity(false);
-    this.megaBoss.setVelocityY(0);
-    this.megaBoss.y = 120;
+        this.megaBoss.body.setAllowGravity(false);
+        this.megaBoss.setVelocityY(0);
+        this.megaBoss.y = 120;
 
         this.megaBoss.body.allowGravity = false;
 
@@ -390,7 +390,13 @@ this.input.keyboard.on("keydown-B", () => {
 
         const bossSpeed = 80 + (this.level * 3);
 
-        this.physics.add.overlap(this.bullets, this.megaBoss, this.hitMegaBoss, null, this);
+        this.megaBossCollider = this.physics.add.overlap(
+            this.bullets,
+            this.megaBoss,
+            this.hitMegaBoss,
+            null,
+            this
+        );
 
         this.megaBossMoveEvent = this.time.addEvent({
             delay: 1500,
@@ -741,9 +747,15 @@ this.input.keyboard.on("keydown-B", () => {
     this.scoreText.setText("Score: " + this.score);
     }
 
-killMegaBoss(){
+     killMegaBoss(){
 
     this.bossActive = false;
+
+    // ✅ Remove bullet collision with MegaBoss
+    if(this.megaBossCollider){
+        this.megaBossCollider.destroy();
+        this.megaBossCollider = null;
+    }
 
     // Stop spike firing loop
     if(this.spikeEvent){
@@ -961,5 +973,6 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
