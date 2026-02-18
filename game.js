@@ -539,7 +539,7 @@ class LoadingScene extends Phaser.Scene {
 });
 
         // 🔥 DEBUG: Press B to spawn MegaBoss
-this.input.keyboard.on("keydown-B", () => {
+    this.input.keyboard.on("keydown-B", () => {
 
     // Prevent multiple bosses
     if(this.bossActive) return;
@@ -1046,7 +1046,7 @@ this.input.keyboard.on("keydown-B", () => {
     spawnSpike(){
 
     if(!this.bossActive) return;
-    if(!this.megaBoss) return;
+    if(!this.megaBoss || !this.megaBoss.active) return;
 
     const shardCount = 4;       // fewer shards
     const spreadAngle = 80;     // narrower spread
@@ -1347,8 +1347,6 @@ this.input.keyboard.on("keydown-B", () => {
         this.spikeEvent.remove(true);
         this.spikeEvent = null;
     }
-
-    this.time.removeAllEvents(); // 🚨 CRITICAL FIX
 
     if(this.megaBossMoveEvent){
         this.megaBossMoveEvent.remove(true);
@@ -2898,6 +2896,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
