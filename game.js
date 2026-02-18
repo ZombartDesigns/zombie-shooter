@@ -413,13 +413,25 @@ this.input.keyboard.on("keydown-B", () => {
 
     hitMegaBoss(bullet, boss){
 
-    bullet.setActive(false);
-    bullet.setVisible(false);
-    bullet.body.enable = false;
+    if(!this.bossActive) return;
 
+    // 🚨 HARD REMOVE bullet from physics world immediately
+    bullet.disableBody(true, true);
+
+    // 🚨 Do not count hits while shield active
     if(this.bossShieldActive) return;
 
+    // 🚨 Prevent multiple increments in same frame
+    if(boss.hitRegistered) return;
+    boss.hitRegistered = true;
+
+    this.time.delayedCall(50, () => {
+        boss.hitRegistered = false;
+    });
+
     this.bossHitCount++;
+
+    console.log("Boss Hits:", this.bossHitCount);
 
     if(this.bossHitCount >= this.bossHitsRequired){
         this.killMegaBoss();
@@ -972,6 +984,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
