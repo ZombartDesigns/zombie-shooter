@@ -943,11 +943,12 @@ class LoadingScene extends Phaser.Scene {
         
         if (
             !this.levelPaused &&
+            !this.bossActive &&   // 👈 ADD THIS LINE
             this.zombiesSpawned >= this.killsToAdvance &&
             this.zombies.countActive(true) === 0
-        ) {
+    ) {
             this.nextLevel();
-        }
+    }
 
         this.player.setVelocity(0);
 
@@ -1002,6 +1003,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
