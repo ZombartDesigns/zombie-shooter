@@ -244,6 +244,17 @@ class LoadingScene extends Phaser.Scene {
         this.togglePause();
 });
 
+        // 🔥 DEBUG: Press B to spawn MegaBoss
+this.input.keyboard.on("keydown-B", () => {
+
+    // Prevent multiple bosses
+    if(this.bossActive) return;
+
+    console.log("DEBUG: Spawning MegaBoss");
+
+    this.spawnMegaBoss();
+});
+
         // ===== PLAYER =====
         this.player = this.physics.add.sprite(400, 540, "player")
             .setScale(0.15)
@@ -950,4 +961,5 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
