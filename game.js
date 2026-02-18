@@ -293,13 +293,13 @@ class LoadingScene extends Phaser.Scene {
         });
 
         this.physics.add.overlap(
-            this.bullets,
-            this.zombies,
-            this.hitZombie,
-            null,
-            this
-        );
-      
+        this.bullets,
+        this.zombies,
+        this.hitZombie,
+        (bullet, zombie) => zombie !== this.megaBoss,
+        this
+    );
+          
         this.physics.add.overlap(
         this.player,
         this.zombies,
@@ -1010,6 +1010,3 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
-
-
-
