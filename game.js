@@ -379,7 +379,7 @@ class LoadingScene extends Phaser.Scene {
 
         spawnMegaBoss(){
 
-        this.levelPaused = false;
+        this.levelPaused = true;
         this.zombiesSpawned = 0;        // 🔥 RESET counter
         this.zombieTimer.paused = true;
         this.bossActive = true;
@@ -790,24 +790,20 @@ class LoadingScene extends Phaser.Scene {
 
     this.bossActive = false;
 
-    // Stop spike loop
     if(this.spikeEvent){
-        this.spikeEvent.remove();
+        this.spikeEvent.remove(false);
         this.spikeEvent = null;
     }
 
-    // Stop movement
     if(this.megaBossMoveEvent){
-        this.megaBossMoveEvent.remove();
+        this.megaBossMoveEvent.remove(false);
         this.megaBossMoveEvent = null;
     }
 
     this.bossShieldActive = false;
 
-    // Clear shards
     this.spikes.clear(true, true);
 
-    // Big explosion effect
     this.bossSplatSound.play({volume:1});
     this.cameras.main.shake(1000, 0.03);
 
@@ -816,12 +812,12 @@ class LoadingScene extends Phaser.Scene {
         this.megaBoss = null;
     }
 
-    // 🔥 DO NOT CALL nextLevel() HERE
-    // Let update() handle progression naturally
-
+    // Resume level flow cleanly
+    this.levelPaused = false;
     this.zombieTimer.paused = false;
-    this.zombiesSpawned = this.killsToAdvance; // force level completion
+    this.zombiesSpawned = this.killsToAdvance;
 }
+            
         hitPlayer(player, zombie){
 
     if(this.isBladeShield){
@@ -949,12 +945,12 @@ class LoadingScene extends Phaser.Scene {
         if(this.isGamePaused) return;
         
         if (
-            !this.levelPaused &&
-            !this.bossActive &&   // 👈 ADD THIS LINE
-            this.zombiesSpawned >= this.killsToAdvance &&
-            this.zombies.countActive(true) === 0
+        !this.levelPaused &&
+        !this.bossActive &&
+        this.zombiesSpawned >= this.killsToAdvance &&
+        this.zombies.countActive(true) === 0
     ) {
-            this.nextLevel();
+        this.nextLevel();
     }
 
         this.player.setVelocity(0);
@@ -1010,4 +1006,5 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
