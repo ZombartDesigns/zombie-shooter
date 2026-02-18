@@ -714,7 +714,7 @@ this.input.keyboard.on("keydown-B", () => {
     hitZombie(bullet, zombie){
 
     // 🚨 Ignore MegaBoss completely
-    if(this.bossActive && zombie === this.megaBoss){
+    if(zombie === this.megaBoss){
         return;
     }
 
@@ -745,19 +745,6 @@ this.input.keyboard.on("keydown-B", () => {
     this.score += zombie.isBoss ? 50 : 10;
     this.scoreText.setText("Score: " + this.score);
 }
-
-    zombie.destroy();
-
-    const splat = this.add.image(zombie.x, zombie.y, "blood")
-        .setScale(zombie.isBoss ? 0.5 : 0.3)
-        .setAlpha(0.85)
-        .setDepth(this.LAYERS.BLOOD);
-
-    this.bloodSplats.push(splat);
-
-    this.score += zombie.isBoss ? 50 : 10;
-    this.scoreText.setText("Score: " + this.score);
-    }
 
      killMegaBoss(){
 
@@ -985,6 +972,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
