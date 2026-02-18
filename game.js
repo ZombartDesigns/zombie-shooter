@@ -292,13 +292,13 @@ class LoadingScene extends Phaser.Scene {
             loop:true
         });
 
-        this.zombieBulletCollider = this.physics.add.overlap(
-        this.bullets,
-        this.zombies,
-        this.hitZombie,
-        (bullet, zombie) => zombie !== this.megaBoss,
-        this
-    );
+        this.physics.add.overlap(
+            this.bullets,
+            this.zombies,
+            this.hitZombie,
+            null,
+            this
+        );
       
         this.physics.add.overlap(
         this.player,
@@ -750,6 +750,11 @@ class LoadingScene extends Phaser.Scene {
 
     hitZombie(bullet, zombie){
 
+    // 🚨 ABSOLUTE PROTECTION
+    if(this.bossActive && zombie === this.megaBoss){
+        return;
+    }
+
     bullet.disableBody(true, true);
 
     zombie.hp--;
@@ -1003,6 +1008,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
