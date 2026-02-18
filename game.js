@@ -367,48 +367,47 @@ class LoadingScene extends Phaser.Scene {
 
         spawnMegaBoss(){
 
-        this.megaBoss.isMegaBoss = true;
-            
-        this.levelPaused = false;
-        this.zombieTimer.paused = true;
-        this.bossActive = true;
+    this.levelPaused = false;
+    this.zombieTimer.paused = true;
+    this.bossActive = true;
 
-        this.megaBoss = this.physics.add.sprite(400, 120, "boss")
-            .setScale(0.4)
-            .setDepth(this.LAYERS.ZOMBIE + 5)
-            .setCollideWorldBounds(true);
+    this.megaBoss = this.physics.add.sprite(400, 120, "boss")
+        .setScale(0.4)
+        .setDepth(this.LAYERS.ZOMBIE + 5)
+        .setCollideWorldBounds(true);
 
-        this.megaBoss.setImmovable(true);
-        this.megaBoss.body.setAllowGravity(false);
-        this.megaBoss.setVelocityY(0);
-        this.megaBoss.y = 120;
+    // ✅ SET FLAG HERE (after creation)
+    this.megaBoss.isMegaBoss = true;
 
-        this.megaBoss.body.allowGravity = false;
+    this.megaBoss.setImmovable(true);
+    this.megaBoss.body.setAllowGravity(false);
+    this.megaBoss.setVelocityY(0);
+    this.megaBoss.y = 120;
 
-        this.bossHitsRequired = 20;
-        this.bossHitCount = 0;
+    this.bossHitsRequired = 20;
+    this.bossHitCount = 0;
 
-        this.megaBoss.postFX.addGlow(0xff6600, 3);
+    this.megaBoss.postFX.addGlow(0xff6600, 3);
 
-        const bossSpeed = 80 + (this.level * 3);
+    const bossSpeed = 80 + (this.level * 3);
 
-        this.megaBossCollider = this.physics.add.overlap(
-            this.bullets,
-            this.megaBoss,
-            this.hitMegaBoss,
-            null,
-            this
-        );
+    this.megaBossCollider = this.physics.add.overlap(
+        this.bullets,
+        this.megaBoss,
+        this.hitMegaBoss,
+        null,
+        this
+    );
 
-        this.megaBossMoveEvent = this.time.addEvent({
-            delay: 1500,
-            loop: true,
-            callback: () => {
-                if(!this.bossActive) return;
-                const direction = Phaser.Math.Between(0,1) ? 1 : -1;
-                this.megaBoss.setVelocityX(direction * bossSpeed);
-            }
-        });
+    this.megaBossMoveEvent = this.time.addEvent({
+        delay: 1500,
+        loop: true,
+        callback: () => {
+            if(!this.bossActive) return;
+            const direction = Phaser.Math.Between(0,1) ? 1 : -1;
+            this.megaBoss.setVelocityX(direction * bossSpeed);
+        }
+    });
 
     this.startSpikeCycle();
 }
@@ -756,19 +755,6 @@ class LoadingScene extends Phaser.Scene {
     this.scoreText.setText("Score: " + this.score);
 }
 
-    zombie.destroy();
-
-    const splat = this.add.image(zombie.x, zombie.y, "blood")
-        .setScale(zombie.isBoss ? 0.5 : 0.3)
-        .setAlpha(0.85)
-        .setDepth(this.LAYERS.BLOOD);
-
-    this.bloodSplats.push(splat);
-
-    this.score += zombie.isBoss ? 50 : 10;
-    this.scoreText.setText("Score: " + this.score);
-}
-
      killMegaBoss(){
 
     this.bossActive = false;
@@ -995,3 +981,4 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
