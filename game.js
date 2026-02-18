@@ -713,16 +713,15 @@ this.input.keyboard.on("keydown-B", () => {
 
     hitZombie(bullet, zombie){
 
-    // 🚨 DO NOT treat MegaBoss like normal zombie
-    if(zombie === this.megaBoss){
+    // 🚨 Ignore MegaBoss completely
+    if(this.bossActive && zombie === this.megaBoss){
         return;
     }
 
-        bullet.setActive(false);
-        bullet.setVisible(false);
-        bullet.body.enable = false;
+    bullet.setActive(false);
+    bullet.setVisible(false);
+    bullet.body.enable = false;
 
-   
     // ===== NORMAL ENEMIES =====
     zombie.hp--;
     if(zombie.hp > 0) return;
@@ -733,6 +732,19 @@ this.input.keyboard.on("keydown-B", () => {
     } else {
         this.splatSound.play({volume:0.4});
     }
+
+    zombie.destroy();
+
+    const splat = this.add.image(zombie.x, zombie.y, "blood")
+        .setScale(zombie.isBoss ? 0.5 : 0.3)
+        .setAlpha(0.85)
+        .setDepth(this.LAYERS.BLOOD);
+
+    this.bloodSplats.push(splat);
+
+    this.score += zombie.isBoss ? 50 : 10;
+    this.scoreText.setText("Score: " + this.score);
+}
 
     zombie.destroy();
 
@@ -973,6 +985,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
