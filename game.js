@@ -786,44 +786,42 @@ class LoadingScene extends Phaser.Scene {
 
      killMegaBoss(){
 
+    if(!this.bossActive) return;
+
     this.bossActive = false;
 
-    // ✅ Remove bullet collision with MegaBoss
-    if(this.megaBossCollider){
-        this.megaBossCollider.destroy();
-        this.megaBossCollider = null;
-    }
-
-    // Stop spike firing loop
+    // Stop spike loop
     if(this.spikeEvent){
-        this.spikeEvent.remove(true);
+        this.spikeEvent.remove();
         this.spikeEvent = null;
     }
 
-    // Stop boss movement timer
+    // Stop movement
     if(this.megaBossMoveEvent){
-        this.megaBossMoveEvent.remove(true);
+        this.megaBossMoveEvent.remove();
         this.megaBossMoveEvent = null;
     }
 
     this.bossShieldActive = false;
 
-    // Remove all shards safely
+    // Clear shards
     this.spikes.clear(true, true);
 
-    this.bossSplatSound.play({volume:0.8});
-    this.cameras.main.shake(800, 0.02);
+    // Big explosion effect
+    this.bossSplatSound.play({volume:1});
+    this.cameras.main.shake(1000, 0.03);
 
     if(this.megaBoss){
         this.megaBoss.destroy();
         this.megaBoss = null;
     }
 
-    this.levelPaused = false;
+    // 🔥 DO NOT CALL nextLevel() HERE
+    // Let update() handle progression naturally
 
-    this.levelPaused = false;
-    this.nextLevel();
-    }
+    this.zombieTimer.paused = false;
+    this.zombiesSpawned = this.killsToAdvance; // force level completion
+}
         hitPlayer(player, zombie){
 
     if(this.isBladeShield){
@@ -1012,5 +1010,6 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
