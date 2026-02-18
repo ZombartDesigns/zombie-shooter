@@ -379,57 +379,45 @@ class LoadingScene extends Phaser.Scene {
 
         spawnMegaBoss(){
 
-        this.levelPaused = true;
-        this.zombiesSpawned = 0;        // 🔥 RESET counter
-        this.zombieTimer.paused = true;
-        this.bossActive = true;
+    this.levelPaused = true;
+    this.zombiesSpawned = 0;
+    this.zombieTimer.paused = true;
+    this.bossActive = true;
 
-        this.megaBoss = this.physics.add.sprite(400, 120, "boss");
+    this.megaBoss = this.physics.add.sprite(400, 120, "boss")
+        .setScale(0.4)
+        .setDepth(this.LAYERS.ZOMBIE + 5);
 
-        this.megaBoss.body.setAllowGravity(false);
-        this.megaBoss.body.setImmovable(true);
-        this.megaBoss.body.checkCollision.up = false;
-        this.megaBoss.body.checkCollision.down = false;
-        this.megaBoss.body.checkCollision.left = false;
-        this.megaBoss.body.checkCollision.right = false;
-            .setScale(0.4)
-            .setDepth(this.LAYERS.ZOMBIE + 5)
+    this.megaBoss.isMegaBoss = true;
 
-        this.megaBoss.body.onWorldBounds = false;
-        this.megaBoss.body.setCollideWorldBounds(false);
+    this.megaBoss.body.setAllowGravity(false);
+    this.megaBoss.setImmovable(true);
+    this.megaBoss.setCollideWorldBounds(false);
 
-        this.megaBoss.isMegaBoss = true;
+    this.megaBoss.hp = 9999;
+    this.megaBoss.setVelocity(0,0);
 
-        this.megaBoss.hp = 9999; // 🔥 prevent zombie system killing him
+    this.bossHitsRequired = 20;
+    this.bossHitCount = 0;
 
-        this.megaBoss.setImmovable(true);
-        this.megaBoss.body.setAllowGravity(false);
-        this.megaBoss.setVelocityY(0);
-        this.megaBoss.y = 120;
+    this.megaBoss.postFX.addGlow(0xff6600, 3);
 
-        this.bossHitsRequired = 20;
-        this.bossHitCount = 0;
+    const bossSpeed = 80 + (this.level * 3);
 
-        this.megaBoss.postFX.addGlow(0xff6600, 3);
-
-        const bossSpeed = 80 + (this.level * 3);
-
-        this.physics.add.overlap(
+    // Player overlap
+    this.physics.add.overlap(
         this.player,
         this.megaBoss,
         (player, boss) => {
-
-        if(this.isBladeShield){
-            return; // immune
-        }
-
-        this.loseLife();
-    },
-    null,
-    this
+            if(this.isBladeShield) return;
+            this.loseLife();
+        },
+        null,
+        this
     );
 
-    this.megaBossCollider = this.physics.add.overlap(
+    // Bullet overlap
+    this.physics.add.overlap(
         this.bullets,
         this.megaBoss,
         this.hitMegaBoss,
@@ -437,11 +425,12 @@ class LoadingScene extends Phaser.Scene {
         this
     );
 
+    // Movement timer
     this.megaBossMoveEvent = this.time.addEvent({
         delay: 1500,
         loop: true,
         callback: () => {
-            if(!this.bossActive) return;
+            if(!this.bossActive || !this.megaBoss) return;
             const direction = Phaser.Math.Between(0,1) ? 1 : -1;
             this.megaBoss.setVelocityX(direction * bossSpeed);
         }
@@ -1016,6 +1005,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
