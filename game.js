@@ -389,6 +389,8 @@ class LoadingScene extends Phaser.Scene {
             .setDepth(this.LAYERS.ZOMBIE + 5)
             .setCollideWorldBounds(true);
 
+        this.megaBoss.hp = 9999; // 🔥 prevent zombie system killing him
+
         this.megaBoss.setImmovable(true);
         this.megaBoss.body.setAllowGravity(false);
         this.megaBoss.setVelocityY(0);
@@ -751,8 +753,8 @@ class LoadingScene extends Phaser.Scene {
 
     hitZombie(bullet, zombie){
 
-    // 🚨 ABSOLUTE PROTECTION
-    if(this.bossActive && zombie === this.megaBoss){
+    // 🚨 NEVER allow zombie handler to affect MegaBoss
+    if(zombie === this.megaBoss){
         return;
     }
 
@@ -1010,3 +1012,4 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
