@@ -741,18 +741,17 @@ this.input.keyboard.on("keydown-B", () => {
     this.scoreText.setText("Score: " + this.score);
     }
 
-    killMegaBoss(){
+killMegaBoss(){
 
     this.bossActive = false;
 
-    // STOP ALL spike events
+    // Stop spike firing loop
     if(this.spikeEvent){
         this.spikeEvent.remove(true);
         this.spikeEvent = null;
     }
 
-    this.time.removeAllEvents(); // 🚨 CRITICAL FIX
-
+    // Stop boss movement timer
     if(this.megaBossMoveEvent){
         this.megaBossMoveEvent.remove(true);
         this.megaBossMoveEvent = null;
@@ -760,6 +759,7 @@ this.input.keyboard.on("keydown-B", () => {
 
     this.bossShieldActive = false;
 
+    // Remove all shards safely
     this.spikes.clear(true, true);
 
     this.bossSplatSound.play({volume:0.8});
@@ -770,10 +770,10 @@ this.input.keyboard.on("keydown-B", () => {
         this.megaBoss = null;
     }
 
+    // Resume normal game
     this.zombieTimer.paused = false;
     this.levelPaused = false;
 }
-
         hitPlayer(player, zombie){
 
     if(this.isBladeShield){
@@ -961,4 +961,5 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
