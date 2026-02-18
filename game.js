@@ -245,7 +245,7 @@ class LoadingScene extends Phaser.Scene {
 });
 
         // 🔥 DEBUG: Press B to spawn MegaBoss
-this.input.keyboard.on("keydown-B", () => {
+    this.input.keyboard.on("keydown-B", () => {
 
     // Prevent multiple bosses
     if(this.bossActive) return;
@@ -349,7 +349,7 @@ this.input.keyboard.on("keydown-B", () => {
         this.zombiesSpawned++;
     }
 
-    spawnBoss(){
+        spawnBoss(){
         if(this.levelPaused) return;
 
         const x = Phaser.Math.Between(60,740);
@@ -367,6 +367,8 @@ this.input.keyboard.on("keydown-B", () => {
 
         spawnMegaBoss(){
 
+        this.megaBoss.isMegaBoss = true;
+            
         this.levelPaused = false;
         this.zombieTimer.paused = true;
         this.bossActive = true;
@@ -507,17 +509,17 @@ this.input.keyboard.on("keydown-B", () => {
 
         hitSpikePlayer(player, spike){
 
-    // ✅ If blade shield is active → immune to shards
-    if(this.isBladeShield){
-        spike.destroy();  // destroy shard
-        return;           // no damage
-    }
+        // ✅ If blade shield is active → immune to shards
+        if(this.isBladeShield){
+            spike.destroy();  // destroy shard
+            return;           // no damage
+        }
 
-    // ❌ No shield → take damage
-    spike.destroy();
-    this.loseLife();
-}
-    collectPowerup(player, item){
+        // ❌ No shield → take damage
+        spike.destroy();
+        this.loseLife();
+    }
+        collectPowerup(player, item){
 
         this.powerupSound.play();
 
@@ -563,35 +565,35 @@ this.input.keyboard.on("keydown-B", () => {
             });
         }
     }
-    spawnPowerup(){
+        spawnPowerup(){
 
-    if(this.levelPaused) return;
+        if(this.levelPaused) return;
 
-    const types = ["speedItem","multiItem","bladeItem"];
-    const type = Phaser.Utils.Array.GetRandom(types);
+        const types = ["speedItem","multiItem","bladeItem"];
+        const type = Phaser.Utils.Array.GetRandom(types);
 
-    const x = Phaser.Math.Between(80,720);
-    const y = Phaser.Math.Between(80,520);
+        const x = Phaser.Math.Between(80,720);
+        const y = Phaser.Math.Between(80,520);
 
-    const item = this.powerups.create(x,y,type);
+        const item = this.powerups.create(x,y,type);
 
-    item.setScale(0.06);
-    item.setDepth(this.LAYERS.ZOMBIE);
+        item.setScale(0.06);
+        item.setDepth(this.LAYERS.ZOMBIE);
 
-    // Glow
-    if(type==="speedItem")
-        item.postFX.addGlow(0xffffff,2);
+        // Glow
+        if(type==="speedItem")
+            item.postFX.addGlow(0xffffff,2);
 
-    if(type==="multiItem")
-        item.postFX.addGlow(0xff8800,2);
+        if(type==="multiItem")
+            item.postFX.addGlow(0xff8800,2);
 
-    if(type==="bladeItem")
-        item.postFX.addGlow(0x00ff00,2);
-    }
+        if(type==="bladeItem")
+            item.postFX.addGlow(0x00ff00,2);
+        }
 
-    togglePause(){
+        togglePause(){
 
-    if(this.isGamePaused){
+        if(this.isGamePaused){
 
         // RESUME
         this.physics.resume();
@@ -655,8 +657,8 @@ this.input.keyboard.on("keydown-B", () => {
         }
     ).setOrigin(0.5).setDepth(this.LAYERS.UI);
 
-    nameInput.addEventListener("keydown",(event)=>{
-        if(event.key === "Enter"){
+        nameInput.addEventListener("keydown",(event)=>{
+            if(event.key === "Enter"){
 
             const playerName = nameInput.value.toUpperCase() || "AAA";
 
@@ -725,17 +727,13 @@ this.input.keyboard.on("keydown-B", () => {
 
     hitZombie(bullet, zombie){
 
-    // 🚨 Ignore MegaBoss completely
-    if(zombie === this.megaBoss){
-        return;
-    }
+    // 🚨 If somehow MegaBoss gets here, ignore completely
+    if(zombie.isMegaBoss) return;
 
-    bullet.setActive(false);
-    bullet.setVisible(false);
-    bullet.body.enable = false;
+    bullet.disableBody(true, true);
 
-    // ===== NORMAL ENEMIES =====
     zombie.hp--;
+
     if(zombie.hp > 0) return;
 
     if(zombie.isBoss){
@@ -744,6 +742,19 @@ this.input.keyboard.on("keydown-B", () => {
     } else {
         this.splatSound.play({volume:0.4});
     }
+
+    zombie.destroy();
+
+    const splat = this.add.image(zombie.x, zombie.y, "blood")
+        .setScale(zombie.isBoss ? 0.5 : 0.3)
+        .setAlpha(0.85)
+        .setDepth(this.LAYERS.BLOOD);
+
+    this.bloodSplats.push(splat);
+
+    this.score += zombie.isBoss ? 50 : 10;
+    this.scoreText.setText("Score: " + this.score);
+}
 
     zombie.destroy();
 
@@ -984,6 +995,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
