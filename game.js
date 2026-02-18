@@ -947,20 +947,3 @@ new Phaser.Game({
     scene: [LoadingScene, MainScene]
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
