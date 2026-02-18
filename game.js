@@ -432,6 +432,7 @@ class LoadingScene extends Phaser.Scene {
 
     spawnSpike(){
 
+    if(!this.bossActive) return;
     if(!this.megaBoss) return;
 
     const shardCount = 4;       // fewer shards
@@ -690,6 +691,11 @@ class LoadingScene extends Phaser.Scene {
 
     hitZombie(bullet, zombie){
 
+    // 🚨 DO NOT treat MegaBoss like normal zombie
+    if(zombie === this.megaBoss){
+        return;
+    }
+
         bullet.setActive(false);
         bullet.setVisible(false);
         bullet.body.enable = false;
@@ -721,15 +727,18 @@ class LoadingScene extends Phaser.Scene {
 
     killMegaBoss(){
 
-    this.bossActive = false;   // 🚨 MUST be first
+    this.bossActive = false;
 
+    // STOP ALL spike events
     if(this.spikeEvent){
-        this.spikeEvent.remove(false);
+        this.spikeEvent.remove(true);
         this.spikeEvent = null;
     }
 
+    this.time.removeAllEvents(); // 🚨 CRITICAL FIX
+
     if(this.megaBossMoveEvent){
-        this.megaBossMoveEvent.remove(false);
+        this.megaBossMoveEvent.remove(true);
         this.megaBossMoveEvent = null;
     }
 
@@ -932,6 +941,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
