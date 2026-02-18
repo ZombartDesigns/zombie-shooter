@@ -384,10 +384,19 @@ class LoadingScene extends Phaser.Scene {
         this.zombieTimer.paused = true;
         this.bossActive = true;
 
-        this.megaBoss = this.physics.add.sprite(400, 120, "boss")
+        this.megaBoss = this.physics.add.sprite(400, 120, "boss");
+
+        this.megaBoss.body.setAllowGravity(false);
+        this.megaBoss.body.setImmovable(true);
+        this.megaBoss.body.checkCollision.up = false;
+        this.megaBoss.body.checkCollision.down = false;
+        this.megaBoss.body.checkCollision.left = false;
+        this.megaBoss.body.checkCollision.right = false;
             .setScale(0.4)
             .setDepth(this.LAYERS.ZOMBIE + 5)
-            .setCollideWorldBounds(true);
+
+        this.megaBoss.body.onWorldBounds = false;
+        this.megaBoss.body.setCollideWorldBounds(false);
 
         this.megaBoss.isMegaBoss = true;
 
@@ -942,6 +951,10 @@ class LoadingScene extends Phaser.Scene {
 
     update(){
 
+       if(this.megaBoss && !this.megaBoss.active){
+        console.log("MegaBoss became inactive unexpectedly");
+    }
+        
         if(this.isGamePaused) return;
         
         if (
@@ -976,15 +989,12 @@ class LoadingScene extends Phaser.Scene {
         }
     });
 
-        // Zombie bottom check
         this.zombies.children.each(z => {
+            if(z.isMegaBoss) return;
 
-        // 🚨 NEVER destroy MegaBoss here
-        if(z === this.megaBoss) return;
-
-        if(z.y > 620){
-            z.destroy();
-            this.loseLife();
+            if(z.y > 620){
+                z.destroy();
+                this.loseLife();
         }
     });
 
@@ -1006,5 +1016,6 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
