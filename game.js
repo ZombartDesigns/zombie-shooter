@@ -365,6 +365,11 @@ class LoadingScene extends Phaser.Scene {
             .setDepth(this.LAYERS.ZOMBIE + 5)
             .setCollideWorldBounds(true);
 
+        this.megaBoss.setImmovable(true);
+    this.megaBoss.body.setAllowGravity(false);
+    this.megaBoss.setVelocityY(0);
+    this.megaBoss.y = 120;
+
         this.megaBoss.body.allowGravity = false;
 
         this.bossHitsRequired = 20;
@@ -917,11 +922,15 @@ class LoadingScene extends Phaser.Scene {
 
         // Zombie bottom check
         this.zombies.children.each(z => {
-            if(z.y > 620){
-                z.destroy();
-                this.loseLife();
-            }
-        });
+
+        // 🚨 NEVER destroy MegaBoss here
+        if(z === this.megaBoss) return;
+
+        if(z.y > 620){
+            z.destroy();
+            this.loseLife();
+        }
+    });
 
         // Bullet cleanup (POOL FIX)
         this.bullets.children.each(b => {
@@ -941,3 +950,4 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
