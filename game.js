@@ -67,6 +67,78 @@ class LoadingScene extends Phaser.Scene {
         });
     }
     }
+
+    // INFO BUTTON (top right corner)
+    const infoButton = this.add.text(770, 20, "i", {
+        fontSize: "28px",
+        fill: "#ffffff",
+        backgroundColor: "#000000"
+    })
+    .setOrigin(0.5)
+    .setPadding(8)
+    .setInteractive()
+    .setDepth(1000);
+
+    infoButton.on("pointerdown", () => {
+        this.showAboutPage();
+    });
+
+    showAboutPage(){
+
+    // Dark overlay
+    const overlay = this.add.rectangle(400,300,800,600,0x000000,0.85)
+        .setDepth(2000)
+        .setInteractive();
+
+    const panel = this.add.text(400,300,
+    `🧟 ZOMBIE SHOOTER
+
+    Survive endless waves of zombies.
+    Every 5 levels bosses appear.
+    Every 10 levels the Mega Boss attacks!
+
+    Destroy enemies to advance levels.
+    Collect powerups to gain advantages.
+
+    ━━━━━━━━━━━━━━
+    🎮 CONTROLS
+
+    Move:  W A S D  or  Arrow Keys
+    Shoot: SPACEBAR
+    Pause: P
+
+    ━━━━━━━━━━━━━━
+    💎 POWERUPS
+
+    ⚡ Speed Boost – Move faster
+    🔥 Triple Shot – Shoot 3 arrows
+    🛡 Blade Shield – Temporary immunity
+
+    Click anywhere or press ESC to close.
+    `,
+    {
+        fontSize: "20px",
+        fill: "#ffffff",
+        align: "center",
+        wordWrap: { width: 600 }
+    })
+    .setOrigin(0.5)
+    .setDepth(2001);
+
+    // Close on click
+       overlay.on("pointerdown", () => {
+           overlay.destroy();
+           panel.destroy();
+       });
+
+        // Close on ESC
+        this.input.keyboard.once("keydown-ESC", () => {
+            overlay.destroy();
+            panel.destroy();
+        });
+    }
+
+
         class MainScene extends Phaser.Scene {
             constructor() {
                 super("MainScene");
@@ -874,6 +946,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
