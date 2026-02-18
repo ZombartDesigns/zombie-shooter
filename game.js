@@ -299,8 +299,14 @@ class LoadingScene extends Phaser.Scene {
         (bullet, zombie) => zombie !== this.megaBoss,
         this
     );
-        this.physics.add.overlap(this.player,this.zombies,this.hitPlayer,null,this);
-    }
+      
+        this.physics.add.overlap(
+        this.player,
+        this.zombies,
+        this.hitPlayer,
+        (player, zombie) => zombie !== this.megaBoss,
+        this
+    );}
 
     playNextTrack(){
         if(this.currentMusic) this.currentMusic.stop();
@@ -393,6 +399,21 @@ class LoadingScene extends Phaser.Scene {
     this.megaBoss.postFX.addGlow(0xff6600, 3);
 
     const bossSpeed = 80 + (this.level * 3);
+
+    this.physics.add.overlap(
+    this.player,
+    this.megaBoss,
+    (player, boss) => {
+
+        if(this.isBladeShield){
+            return; // immune
+        }
+
+        this.loseLife();
+    },
+    null,
+    this
+    );
 
     this.megaBossCollider = this.physics.add.overlap(
         this.bullets,
@@ -981,5 +1002,6 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
