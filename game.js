@@ -4,8 +4,6 @@ class LoadingScene extends Phaser.Scene {
     }
 
     preload(){
-
-        // LOAD SAME IMAGES USED IN GAME
         this.load.image("bg1", "assets/background1.png");
         this.load.image("player", "assets/player.png");
         this.load.image("zombie", "assets/zombie.png");
@@ -18,15 +16,9 @@ class LoadingScene extends Phaser.Scene {
             .setDisplaySize(800, 600)
             .setAlpha(0.4);
 
-        // Player Image (left)
-        this.add.image(250, 350, "player")
-            .setScale(0.25);
+        this.add.image(250, 350, "player").setScale(0.25);
+        this.add.image(550, 350, "zombie").setScale(0.25);
 
-        // Zombie Image (right)
-        this.add.image(550, 350, "zombie")
-            .setScale(0.25);
-
-        // Title
         this.add.text(400, 120, "ZOMBIE SHOOTER", {
             fontSize: "48px",
             fill: "#ffffff",
@@ -34,20 +26,16 @@ class LoadingScene extends Phaser.Scene {
             strokeThickness: 6
         }).setOrigin(0.5);
 
-        // Leaderboard Title
         this.add.text(400, 190, "TOP 5", {
             fontSize: "28px",
             fill: "#ffcc00"
         }).setOrigin(0.5);
 
-        // Load leaderboard
         const scores = JSON.parse(localStorage.getItem("zombieLeaderboard")) || [];
 
         for(let i = 0; i < 5; i++){
-
             const entry = scores[i];
-            const text = entry ? `${i+1}. ${entry.name} - ${entry.score}` 
-                               : `${i+1}. ---`;
+            const text = entry ? `${i+1}. ${entry.name} - ${entry.score}` : `${i+1}. ---`;
 
             this.add.text(400, 230 + (i * 30), text, {
                 fontSize: "22px",
@@ -55,90 +43,82 @@ class LoadingScene extends Phaser.Scene {
             }).setOrigin(0.5);
         }
 
-        // Start Text
-        this.add.text(400, 520, "CLICK TO START", {
+        this.add.text(400, 520, "SPACE TO START", {
             fontSize: "26px",
             fill: "#00ff00"
         }).setOrigin(0.5);
 
-        // SPACEBAR TO START
         this.input.keyboard.once("keydown-SPACE", () => {
             this.scene.start("MainScene");
         });
+
+        // ✅ INFO BUTTON
+        const infoButton = this.add.text(770, 20, "i", {
+            fontSize: "28px",
+            fill: "#ffffff",
+            backgroundColor: "#000000"
+        })
+        .setOrigin(0.5)
+        .setPadding(8)
+        .setInteractive()
+        .setDepth(1000);
+
+        infoButton.on("pointerdown", () => {
+            this.showAboutPage();
+        });
+
+        // ✅ ALSO allow keyboard "I"
+        this.input.keyboard.on("keydown-I", () => {
+            this.showAboutPage();
+        });
     }
-    }
 
-    // INFO BUTTON (top right corner)
-    const infoButton = this.add.text(770, 20, "i", {
-        fontSize: "28px",
-        fill: "#ffffff",
-        backgroundColor: "#000000"
-    })
-    .setOrigin(0.5)
-    .setPadding(8)
-    .setInteractive()
-    .setDepth(1000);
-
-    infoButton.on("pointerdown", () => {
-        this.showAboutPage();
-    });
-
+    // ✅ MUST BE INSIDE CLASS
     showAboutPage(){
 
-    // Dark overlay
-    const overlay = this.add.rectangle(400,300,800,600,0x000000,0.85)
-        .setDepth(2000)
-        .setInteractive();
+        const overlay = this.add.rectangle(400,300,800,600,0x000000,0.9)
+            .setDepth(2000)
+            .setInteractive();
 
-    const panel = this.add.text(400,300,
-    `🧟 ZOMBIE SHOOTER
+        const panel = this.add.text(400,300,
+    `ZOMBIE SHOOTER
 
     Survive endless waves of zombies.
     Every 5 levels bosses appear.
     Every 10 levels the Mega Boss attacks!
 
-    Destroy enemies to advance levels.
-    Collect powerups to gain advantages.
-
-    ━━━━━━━━━━━━━━
-    🎮 CONTROLS
-
+    CONTROLS
     Move:  W A S D  or  Arrow Keys
     Shoot: SPACEBAR
     Pause: P
+    Info: I
 
-    ━━━━━━━━━━━━━━
-    💎 POWERUPS
+    POWERUPS
+    Speed Boost – Move faster
+    Triple Shot – Shoot 3 arrows
+    Blade Shield – Temporary immunity
 
-    ⚡ Speed Boost – Move faster
-    🔥 Triple Shot – Shoot 3 arrows
-    🛡 Blade Shield – Temporary immunity
+    Click or press ESC to close.`,
+        {
+            fontSize: "20px",
+            fill: "#ffffff",
+            align: "center",
+            wordWrap: { width: 600 }
+        })
+        .setOrigin(0.5)
+        .setDepth(2001);
 
-    Click anywhere or press ESC to close.
-    `,
-    {
-        fontSize: "20px",
-        fill: "#ffffff",
-        align: "center",
-        wordWrap: { width: 600 }
-    })
-    .setOrigin(0.5)
-    .setDepth(2001);
-
-    // Close on click
-       overlay.on("pointerdown", () => {
-           overlay.destroy();
-           panel.destroy();
-       });
-
-        // Close on ESC
-        this.input.keyboard.once("keydown-ESC", () => {
+        overlay.on("pointerdown", () => {
             overlay.destroy();
             panel.destroy();
         });
-    }
 
-
+        this.input.keyboard.once("keydown-ESC", () => {
+            overlay.destroy();
+            panel.destroy();
+         });
+      }
+}
         class MainScene extends Phaser.Scene {
             constructor() {
                 super("MainScene");
@@ -946,4 +926,5 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
