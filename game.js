@@ -379,31 +379,32 @@ class LoadingScene extends Phaser.Scene {
 
         spawnMegaBoss(){
 
-    this.levelPaused = false;
-    this.zombieTimer.paused = true;
-    this.bossActive = true;
+        this.levelPaused = true;        // 🔥 STOP level progression
+        this.zombiesSpawned = 0;        // 🔥 RESET counter
+        this.zombieTimer.paused = true;
+        this.bossActive = true;
 
-    this.megaBoss = this.physics.add.sprite(400, 120, "boss")
-        .setScale(0.4)
-        .setDepth(this.LAYERS.ZOMBIE + 5)
-        .setCollideWorldBounds(true);
+        this.megaBoss = this.physics.add.sprite(400, 120, "boss")
+            .setScale(0.4)
+            .setDepth(this.LAYERS.ZOMBIE + 5)
+            .setCollideWorldBounds(true);
 
-    this.megaBoss.setImmovable(true);
-    this.megaBoss.body.setAllowGravity(false);
-    this.megaBoss.setVelocityY(0);
-    this.megaBoss.y = 120;
+        this.megaBoss.setImmovable(true);
+        this.megaBoss.body.setAllowGravity(false);
+        this.megaBoss.setVelocityY(0);
+        this.megaBoss.y = 120;
 
-    this.bossHitsRequired = 20;
-    this.bossHitCount = 0;
+        this.bossHitsRequired = 20;
+        this.bossHitCount = 0;
 
-    this.megaBoss.postFX.addGlow(0xff6600, 3);
+        this.megaBoss.postFX.addGlow(0xff6600, 3);
 
-    const bossSpeed = 80 + (this.level * 3);
+        const bossSpeed = 80 + (this.level * 3);
 
-    this.physics.add.overlap(
-    this.player,
-    this.megaBoss,
-    (player, boss) => {
+        this.physics.add.overlap(
+        this.player,
+        this.megaBoss,
+        (player, boss) => {
 
         if(this.isBladeShield){
             return; // immune
@@ -816,10 +817,11 @@ class LoadingScene extends Phaser.Scene {
         this.megaBoss = null;
     }
 
-    // Resume normal game
-    this.zombieTimer.paused = false;
     this.levelPaused = false;
-}
+
+    this.levelPaused = false;
+    this.nextLevel();
+    }
         hitPlayer(player, zombie){
 
     if(this.isBladeShield){
@@ -1008,6 +1010,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
