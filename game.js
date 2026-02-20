@@ -296,7 +296,7 @@ class LoadingScene extends Phaser.Scene {
         this.bullets,
         this.zombies,
         this.hitZombie,
-        (bullet, zombie) => zombie !== this.megaBoss,
+        null,
         this
     );
           
@@ -753,8 +753,7 @@ class LoadingScene extends Phaser.Scene {
 
     hitZombie(bullet, zombie){
 
-    // 🚨 ABSOLUTE PROTECTION
-    if(zombie.isMegaBoss) return;
+    if(zombie === this.megaBoss) return;
 
     bullet.disableBody(true, true);
 
@@ -1005,6 +1004,7 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
 
