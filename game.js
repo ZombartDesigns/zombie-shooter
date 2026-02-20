@@ -134,6 +134,7 @@ class LoadingScene extends Phaser.Scene {
         this.load.image("player", "assets/player.png");
         this.load.image("zombie", "assets/zombie.png");
         this.load.image("boss", "assets/boss.png");
+        this.load.image("megaboss", "assets/megaboss.png");
         this.load.image("bullet", "assets/bullet.png");
         this.load.image("heart", "assets/heart.png");
         this.load.image("blood", "assets/blood.png");
@@ -1005,4 +1006,5 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
