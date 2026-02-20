@@ -604,7 +604,7 @@ class LoadingScene extends Phaser.Scene {
 
         const item = this.powerups.create(x,y,type);
 
-        item.setScale(0.06);
+        item.setScale(0.04);
         item.setDepth(this.LAYERS.ZOMBIE);
 
         // Glow
@@ -1006,5 +1006,6 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
 
 
