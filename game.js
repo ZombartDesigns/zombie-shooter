@@ -379,7 +379,7 @@ class LoadingScene extends Phaser.Scene {
 
         spawnMegaBoss(){
 
-    this.levelPaused = true;
+    this.levelPaused = false;
     this.zombiesSpawned = 0;
     this.zombieTimer.paused = true;
     this.bossActive = true;
@@ -908,7 +908,7 @@ class LoadingScene extends Phaser.Scene {
     
     shoot(){
 
-    if(this.levelPaused || this.isGamePaused) return;
+    if(this.isGamePaused) return;
 
     const createBullet = (x, y, velocityX, velocityY) => {
         const b = this.bullets.get(x, y);
@@ -946,7 +946,6 @@ class LoadingScene extends Phaser.Scene {
         if(this.isGamePaused) return;
         
         if (
-        !this.levelPaused &&
         !this.bossActive &&
         this.zombiesSpawned >= this.killsToAdvance &&
         this.zombies.countActive(true) === 0
@@ -1004,3 +1003,4 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
+
