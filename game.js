@@ -1,3 +1,9 @@
+/*
+ * Zombie Shooter — patched full MainScene / LoadingScene (31 Oct 2026)
+ * Requires Phaser 3, the original assets/ folder, and #game-container.
+ * Main fix: MegaBoss callback identifies boss by identity before recycling a bullet.
+ */
+
 class LoadingScene extends Phaser.Scene {
     constructor(){
         super("LoadingScene");
@@ -164,6 +170,7 @@ class LoadingScene extends Phaser.Scene {
         this.isSpeedBoost = false;
         this.isTripleFire = false;
         this.isBladeShield = false;
+        this.powerupExpiry = { speedItem: 0, multiItem: 0, bladeItem: 0 };
 
         this.zombieSpeed = 60;
         this.killsToAdvance = 20;
@@ -175,8 +182,13 @@ class LoadingScene extends Phaser.Scene {
         this.bossHitsRequired = 20;
         this.bossHitCount = 0;
 
-        this.spikes = this.physics.add.group();
         this.bossShieldActive = false;
+        this.isGameOver = false;
+        this.lastDamageAt = -10000;
+        this.megaBossBulletCollider = null;
+        this.megaBossPlayerCollider = null;
+        this.bossSpikeShieldTimer = null;
+        this.bossSpikeNextCycleTimer = null;
 
         this.basePlayerSpeed = 220;
         this.playerSpeed = this.basePlayerSpeed;
@@ -198,6 +210,10 @@ class LoadingScene extends Phaser.Scene {
 
         this.currentTrackIndex = 0;
         this.playNextTrack();
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            if (this.currentMusic) this.currentMusic.stop();
+            if (this._nameInput?.parentNode) this._nameInput.parentNode.removeChild(this._nameInput);
+        });
 
         this.splatSound = this.sound.add("splat");
         this.bossSplatSound = this.sound.add("bossSplat");
@@ -219,6 +235,11 @@ class LoadingScene extends Phaser.Scene {
         this.levelText = this.add.text(10, 28, "Level: 1",
             { fontSize: "16px", fill: "#fff", stroke:"#000", strokeThickness:3 }
         ).setDepth(this.LAYERS.UI);
+
+        this.bossHealthText = this.add.text(400, 10, "", {
+            fontSize: "16px", fill: "#ffdd88",
+            stroke: "#000000", strokeThickness: 3
+        }).setOrigin(0.5, 0).setDepth(this.LAYERS.UI).setVisible(false);
 
         this.hearts = [];
         for (let i = 0; i < 5; i++) {
@@ -345,7 +366,7 @@ class LoadingScene extends Phaser.Scene {
 }
 
     spawnZombie(){
-        if(this.levelPaused) return;
+        if(this.levelPaused || this.bossActive || this.isGameOver) return;
         if(this.zombiesSpawned>=this.killsToAdvance) return;
 
         const x=Phaser.Math.Between(50,750);
@@ -363,7 +384,7 @@ class LoadingScene extends Phaser.Scene {
     }
 
         spawnBoss(){
-        if(this.levelPaused) return;
+        if(this.levelPaused || this.bossActive || this.isGameOver) return;
 
         const x = Phaser.Math.Between(60,740);
         const boss = this.zombies.create(x, -60, "boss");
@@ -378,125 +399,148 @@ class LoadingScene extends Phaser.Scene {
 
     }
 
-        spawnMegaBoss(){
+    spawnMegaBoss(){
+        if (this.bossActive || this.isGameOver) return;
 
-    this.levelPaused = false;
-    this.zombiesSpawned = 0;
-    this.zombieTimer.paused = true;
-    this.bossActive = true;
-
-    this.megaBoss = this.physics.add.sprite(400, 120, "boss")
-        .setScale(0.4)
-        .setDepth(this.LAYERS.ZOMBIE + 5);
-
-    this.megaBoss.isMegaBoss = true;
-
-    this.megaBoss.body.setAllowGravity(false);
-    this.megaBoss.setImmovable(true);
-    this.megaBoss.setCollideWorldBounds(false);
-
-    this.megaBoss.hp = 9999;
-    this.megaBoss.setVelocity(0,0);
-
-    this.bossHitsRequired = 20;
-    this.bossHitCount = 0;
-
-    this.megaBoss.postFX.addGlow(0xff6600, 3);
-
-    const bossSpeed = 80 + (this.level * 3);
-
-    // Player overlap
-    this.physics.add.overlap(
-        this.player,
-        this.megaBoss,
-        (player, boss) => {
-            if(this.isBladeShield) return;
-            this.loseLife();
-        },
-        null,
-        this
-    );
-
-    // Bullet overlap
-    this.physics.add.overlap(
-        this.bullets,
-        this.megaBoss,
-        this.hitMegaBoss,
-        null,
-        this
-    );
-
-    // Movement timer
-    this.megaBossMoveEvent = this.time.addEvent({
-        delay: 1500,
-        loop: true,
-        callback: () => {
-            if(!this.bossActive || !this.megaBoss) return;
-            const direction = Phaser.Math.Between(0,1) ? 1 : -1;
-            this.megaBoss.setVelocityX(direction * bossSpeed);
-        }
-    });
-
-    this.startSpikeCycle();
-}
-
-    hitMegaBoss(bullet, boss){
-
-    if(!this.bossActive) return;
-
-    // 🚨 HARD REMOVE bullet from physics world immediately
-    bullet.disableBody(true, true);
-
-    // 🚨 Do not count hits while shield active
-    if(this.bossShieldActive) return;
-
-    // 🚨 Prevent multiple increments in same frame
-    if(boss.hitRegistered) return;
-    boss.hitRegistered = true;
-
-    this.time.delayedCall(50, () => {
-        boss.hitRegistered = false;
-    });
-
-    this.bossHitCount++;
-
-    console.log("Boss Hits:", this.bossHitCount);
-
-    if(this.bossHitCount >= this.bossHitsRequired){
-        this.killMegaBoss();
-    }
-}
-
-    startSpikeCycle(){
-
-    if(!this.bossActive) return;
-
-    this.bossShieldActive = true;
-
-    this.spikeEvent = this.time.addEvent({
-        delay: 400,
-        callback: this.spawnSpike,
-        callbackScope: this,
-        repeat: 4
-    });
-
-    this.time.delayedCall(5000, () => {
-
+        // Keep shooting enabled, but suspend normal zombie spawning.
+        this.levelPaused = false;
+        this.zombiesSpawned = 0;
+        this.zombieTimer.paused = true;
+        this.bossActive = true;
         this.bossShieldActive = false;
+        this.bossHitsRequired = 20;
+        this.bossHitCount = 0;
 
-        this.time.delayedCall(2000, () => {
-            if(this.bossActive){
-                this.startSpikeCycle();
+        this.megaBoss = this.physics.add.sprite(400, 120, "boss")
+            .setScale(0.4)
+            .setDepth(this.LAYERS.ZOMBIE + 5);
+
+        this.megaBoss.isMegaBoss = true;
+        this.megaBoss.body.setAllowGravity(false);
+        this.megaBoss.setImmovable(true);
+        this.megaBoss.setCollideWorldBounds(true);
+        this.megaBoss.setBounceX(1);
+        this.megaBoss.setVelocity(0, 0);
+        this.megaBoss.hp = this.bossHitsRequired;
+        this.megaBoss.postFX?.addGlow(0xff6600, 3);
+        this.updateBossHUD();
+
+        const bossSpeed = 80 + this.level * 3;
+
+        this.megaBossPlayerCollider = this.physics.add.overlap(
+            this.player,
+            this.megaBoss,
+            (player, boss) => {
+                if (!this.bossActive || boss !== this.megaBoss || this.isBladeShield) return;
+                this.loseLife(); // Includes invulnerability cooldown.
+            },
+            null,
+            this
+        );
+
+        // CRITICAL FIX: Sprite FIRST, Group SECOND.
+        // Phaser passes the single sprite first for Sprite-vs-Group collisions.
+        this.megaBossBulletCollider = this.physics.add.overlap(
+            this.megaBoss,
+            this.bullets,
+            this.hitMegaBoss,
+            null,
+            this
+        );
+
+        this.megaBossMoveEvent = this.time.addEvent({
+            delay: 1500,
+            loop: true,
+            callback: () => {
+                if (!this.bossActive || !this.megaBoss?.active) return;
+                const direction = Phaser.Math.Between(0, 1) === 0 ? -1 : 1;
+                this.megaBoss.setVelocityX(direction * bossSpeed);
             }
         });
 
-    });
-}
+        this.startSpikeCycle();
+    }
+
+    // Avoid relying solely on Phaser callback argument order.
+    // Either way, only a real bullet can be disabled, never the MegaBoss.
+    hitMegaBoss(first, second){
+        if (!this.bossActive || !this.megaBoss?.active || this.isGameOver) return;
+
+        const boss = this.megaBoss;
+        const bullet = first === boss ? second : (second === boss ? first : null);
+
+        if (!bullet || !this.bullets.contains(bullet)) return;
+        if (!bullet.active || !bullet.body?.enable) return;
+
+        this.recycleBullet(bullet);
+
+        if (this.bossShieldActive) {
+            this.updateBossHUD();
+            return;
+        }
+
+        // No hitRegistered flag: each bullet is immediately disabled and
+        // therefore cannot hit twice. Triple-shot bullets count independently.
+        this.bossHitCount++;
+        boss.hp = Math.max(0, this.bossHitsRequired - this.bossHitCount);
+        this.updateBossHUD();
+
+        console.log(`MegaBoss hit ${this.bossHitCount}/${this.bossHitsRequired}`);
+        boss.setTint(0xff9944);
+        this.time.delayedCall(85, () => {
+            if (boss.active) {
+                if (this.bossShieldActive) boss.setTint(0x88bbff);
+                else boss.clearTint();
+            }
+        });
+
+        if (this.bossHitCount >= this.bossHitsRequired) {
+            this.killMegaBoss();
+        }
+    }
+
+    updateBossHUD(){
+        if (!this.bossHealthText) return;
+        if (!this.bossActive) {
+            this.bossHealthText.setVisible(false);
+            return;
+        }
+        const remaining = Math.max(0, this.bossHitsRequired - this.bossHitCount);
+        const phase = this.bossShieldActive ? "SHIELDED" : "VULNERABLE";
+        this.bossHealthText.setText(`MEGABOSS ${remaining}/20  -  ${phase}`);
+        this.bossHealthText.setVisible(true);
+    }
+
+    startSpikeCycle(){
+        if (!this.bossActive || !this.megaBoss?.active) return;
+
+        // Five seconds shielded, two seconds vulnerable, repeating.
+        this.bossShieldActive = true;
+        this.megaBoss.setTint(0x88bbff);
+        this.updateBossHUD();
+
+        this.spikeEvent = this.time.addEvent({
+            delay: 400,
+            callback: this.spawnSpike,
+            callbackScope: this,
+            repeat: 4
+        });
+
+        this.bossSpikeShieldTimer = this.time.delayedCall(5000, () => {
+            if (!this.bossActive || !this.megaBoss?.active) return;
+            this.bossShieldActive = false;
+            this.megaBoss.clearTint();
+            this.updateBossHUD();
+
+            this.bossSpikeNextCycleTimer = this.time.delayedCall(2000, () => {
+                if (this.bossActive) this.startSpikeCycle();
+            });
+        });
+    }
 
     spawnSpike(){
 
-    if(!this.bossActive) return;
-    if(!this.megaBoss) return;
+    if(!this.bossActive || !this.megaBoss?.active || this.isGameOver) return;
 
     const shardCount = 4;       // fewer shards
     const spreadAngle = 80;     // narrower spread
@@ -525,12 +569,14 @@ class LoadingScene extends Phaser.Scene {
         shard.postFX.addGlow(0xff6600, 1.5);
     }
 }
-        hitSpike(bullet, spike){
-
-        bullet.setActive(false);
-        bullet.setVisible(false);
-        bullet.body.enable = false;
-
+    hitSpike(first, second){
+        // Both operands are groups. Explicit membership protects the objects.
+        const bullet = this.bullets.contains(first) ? first :
+            (this.bullets.contains(second) ? second : null);
+        const spike = this.spikes.contains(first) ? first :
+            (this.spikes.contains(second) ? second : null);
+        if (!bullet || !spike || !bullet.active || !spike.active) return;
+        this.recycleBullet(bullet);
         spike.destroy();
     }
 
@@ -546,55 +592,43 @@ class LoadingScene extends Phaser.Scene {
         spike.destroy();
         this.loseLife();
     }
-        collectPowerup(player, item){
-
+    collectPowerup(player, item){
+        if (this.isGameOver || !item.active) return;
         this.powerupSound.play();
-
         const type = item.texture.key;
         item.destroy();
 
-        // SPEED BOOST
-        if(type === "speedItem" && !this.isSpeedBoost){
+        // Repeated pickups extend, rather than shorten, the existing buff.
+        const duration = type === "speedItem" ? 20000 : 15000;
+        this.powerupExpiry[type] = this.time.now + duration;
 
+        if (type === "speedItem") {
             this.isSpeedBoost = true;
             this.playerSpeed = this.basePlayerSpeed * 2;
-
-            this.updatePlayerGlow();
-
-            this.time.delayedCall(20000, () => {
-                this.playerSpeed = this.basePlayerSpeed;
-                this.isSpeedBoost = false;
-                this.updatePlayerGlow();
-            });
-        }
-
-        // TRIPLE FIRE
-        if(type === "multiItem" && !this.isTripleFire){
-
+        } else if (type === "multiItem") {
             this.isTripleFire = true;
-            this.updatePlayerGlow();
-
-            this.time.delayedCall(15000, () => {
-                this.isTripleFire = false;
-                this.updatePlayerGlow();
-            });
-        }
-
-        // BLADE SHIELD (IMMUNITY)
-        if(type === "bladeItem" && !this.isBladeShield){
-
+        } else if (type === "bladeItem") {
             this.isBladeShield = true;
-            this.updatePlayerGlow();
-
-            this.time.delayedCall(15000, () => {
-                this.isBladeShield = false;
-                this.updatePlayerGlow();
-            });
         }
+        this.updatePlayerGlow(); // Blade Shield remains highest priority.
+
+        this.time.delayedCall(duration, () => {
+            if (this.time.now < this.powerupExpiry[type] || this.isGameOver) return;
+            if (type === "speedItem") {
+                this.isSpeedBoost = false;
+                this.playerSpeed = this.basePlayerSpeed;
+            } else if (type === "multiItem") {
+                this.isTripleFire = false;
+            } else if (type === "bladeItem") {
+                this.isBladeShield = false;
+            }
+            this.updatePlayerGlow();
+        });
     }
+
         spawnPowerup(){
 
-        if(this.levelPaused) return;
+        if(this.levelPaused || this.isGameOver) return;
 
         const types = ["speedItem","multiItem","bladeItem"];
         const type = Phaser.Utils.Array.GetRandom(types);
@@ -618,36 +652,32 @@ class LoadingScene extends Phaser.Scene {
             item.postFX.addGlow(0x00ff00,2);
         }
 
-        togglePause(){
-
-        if(this.isGamePaused){
-
-        // RESUME
-        this.physics.resume();
-        this.isGamePaused = false;
-        this.pauseText.setVisible(false);
-
-        if(this.currentMusic){
-            this.currentMusic.resume();
-        }
-
-    } else {
-
-        // PAUSE
-        this.physics.pause();
-        this.isGamePaused = true;
-        this.pauseText.setVisible(true);
-
-        if(this.currentMusic){
-            this.currentMusic.pause();
+    togglePause(){
+        if (this.isGameOver) return;
+        if (this.isGamePaused) {
+            this.physics.resume();
+            this.time.paused = false;
+            this.isGamePaused = false;
+            this.pauseText.setVisible(false);
+            if (this.currentMusic?.isPaused) this.currentMusic.resume();
+        } else {
+            this.physics.pause();
+            this.time.paused = true;
+            this.isGamePaused = true;
+            this.pauseText.setVisible(true);
+            if (this.currentMusic?.isPlaying) this.currentMusic.pause();
         }
     }
-}
-            
+
     gameOver(){
 
+    if (this.isGameOver) return;
+    this.isGameOver = true;
     this.physics.pause();
+    this.time.paused = false;
     this.levelPaused = true;
+    this.zombieTimer.paused = true;
+    this.bossActive = false;
 
     if(this.currentMusic){
         this.currentMusic.stop();
@@ -670,6 +700,7 @@ class LoadingScene extends Phaser.Scene {
     nameInput.style.textAlign = "center";
     nameInput.style.width = "80px";
     document.body.appendChild(nameInput);
+    this._nameInput = nameInput;
     nameInput.focus();
 
     // GAME OVER TEXT (below input)
@@ -752,105 +783,110 @@ class LoadingScene extends Phaser.Scene {
     localStorage.setItem("zombieLeaderboard", JSON.stringify(scores));
     }
 
-    hitZombie(bullet, zombie){
+    hitZombie(first, second){
+        if (this.isGameOver) return;
+        const bullet = this.bullets.contains(first) ? first :
+            (this.bullets.contains(second) ? second : null);
+        const zombie = this.zombies.contains(first) ? first :
+            (this.zombies.contains(second) ? second : null);
+        if (!bullet || !zombie || !bullet.active || !zombie.active) return;
 
-    // 🚨 ABSOLUTE PROTECTION
-    if(zombie.isMegaBoss) return;
+        this.recycleBullet(bullet);
+        zombie.hp--;
+        if (zombie.hp > 0) return;
 
-    bullet.disableBody(true, true);
-
-    zombie.hp--;
-
-    if(zombie.hp > 0) return;
-
-    if(zombie.isBoss){
-        this.bossSplatSound.play({volume:0.4});
-        this.cameras.main.shake(400,0.012);
-    } else {
-        this.splatSound.play({volume:0.4});
-    }
-
-    zombie.destroy();
-
-    const splat = this.add.image(zombie.x, zombie.y, "blood")
-        .setScale(zombie.isBoss ? 0.5 : 0.3)
-        .setAlpha(0.85)
-        .setDepth(this.LAYERS.BLOOD);
-
-    this.bloodSplats.push(splat);
-
-    this.score += zombie.isBoss ? 50 : 10;
-    this.scoreText.setText("Score: " + this.score);
-}
-
-     killMegaBoss(){
-
-    if(!this.bossActive) return;
-
-    this.bossActive = false;
-
-    if(this.spikeEvent){
-        this.spikeEvent.remove(false);
-        this.spikeEvent = null;
-    }
-
-    if(this.megaBossMoveEvent){
-        this.megaBossMoveEvent.remove(false);
-        this.megaBossMoveEvent = null;
-    }
-
-    this.bossShieldActive = false;
-
-    this.spikes.clear(true, true);
-
-    this.bossSplatSound.play({volume:1});
-    this.cameras.main.shake(1000, 0.03);
-
-    if(this.megaBoss){
-        this.megaBoss.destroy();
-        this.megaBoss = null;
-    }
-
-    // Resume level flow cleanly
-    this.levelPaused = false;
-    this.zombieTimer.paused = false;
-    this.zombiesSpawned = this.killsToAdvance;
-}
-            
-        hitPlayer(player, zombie){
-
-    if(this.isBladeShield){
-
+        // Remember positions BEFORE destroy.
+        const { x, y, isBoss } = zombie;
+        if (isBoss) {
+            this.bossSplatSound.play({ volume: 0.4 });
+            this.cameras.main.shake(400, 0.012);
+        } else {
+            this.splatSound.play({ volume: 0.4 });
+        }
         zombie.destroy();
-
-        const splat = this.add.image(zombie.x, zombie.y, "blood")
-            .setScale(0.4)
-            .setAlpha(0.85)
-            .setDepth(this.LAYERS.BLOOD);
-
-        this.bloodSplats.push(splat);
-
-        return;
+        this.addBloodSplat(x, y, isBoss ? 0.5 : 0.3);
+        this.score += isBoss ? 50 : 10;
+        this.scoreText.setText("Score: " + this.score);
     }
 
-    zombie.destroy();
-    this.loseLife();
+    addBloodSplat(x, y, scale){
+        const splat = this.add.image(x, y, "blood")
+            .setScale(scale).setAlpha(0.85).setDepth(this.LAYERS.BLOOD);
+        this.bloodSplats.push(splat);
+    }
+
+    killMegaBoss(){
+        if (!this.bossActive) return;
+        this.bossActive = false;
+
+        const timers = ["spikeEvent", "megaBossMoveEvent",
+            "bossSpikeShieldTimer", "bossSpikeNextCycleTimer"];
+        for (const key of timers) {
+            if (this[key]) {
+                this[key].remove(false);
+                this[key] = null;
+            }
+        }
+
+        // Remove colliders so no stale callbacks survive a boss encounter.
+        if (this.megaBossBulletCollider) {
+            this.physics.world.removeCollider(this.megaBossBulletCollider);
+            this.megaBossBulletCollider = null;
+        }
+        if (this.megaBossPlayerCollider) {
+            this.physics.world.removeCollider(this.megaBossPlayerCollider);
+            this.megaBossPlayerCollider = null;
+        }
+
+        this.bossShieldActive = false;
+        this.spikes.clear(true, true);
+        this.bossSplatSound.play({ volume: 1 });
+        this.cameras.main.shake(600, 0.02);
+
+        if (this.megaBoss) {
+            this.addBloodSplat(this.megaBoss.x, this.megaBoss.y, 0.7);
+            this.megaBoss.destroy();
+            this.megaBoss = null;
+        }
+        this.updateBossHUD();
+
+        this.score += 250;
+        this.scoreText.setText("Score: " + this.score);
+
+        // Complete the fight; update() will trigger the usual 2-second
+        // LEVEL COMPLETE message and background change.
+        this.levelPaused = false;
+        this.zombiesSpawned = this.killsToAdvance;
+        this.zombieTimer.paused = false;
+    }
+
+    hitPlayer(player, zombie){
+        if (this.isGameOver || !zombie.active) return;
+        const { x, y } = zombie;
+        zombie.destroy();
+        if (this.isBladeShield) {
+            this.addBloodSplat(x, y, 0.4);
+            return;
+        }
+        this.loseLife();
     }
 
     loseLife(){
+        if (this.isGameOver || this.isBladeShield) return;
+
+        // Player/boss overlap otherwise drains all lives in a single frame.
+        const now = this.time.now;
+        if (now - this.lastDamageAt < 1000) return;
+        this.lastDamageAt = now;
 
         this.lives--;
-
-        if(this.hearts[this.lives]){
-            this.hearts[this.lives].setVisible(false);
-        }
-    
-        if(this.lives <= 0){
-            this.gameOver();
-        }
+        if (this.hearts[this.lives]) this.hearts[this.lives].setVisible(false);
+        if (this.lives <= 0) this.gameOver();
     }
+
     nextLevel(){
 
+        if (this.levelPaused || this.bossActive || this.isGameOver) return;
         this.levelPaused = true;
         this.zombieTimer.paused = true;
 
@@ -908,95 +944,82 @@ class LoadingScene extends Phaser.Scene {
  
     }
     
-    shoot(){
-
-    if(this.levelPaused || this.isGamePaused) return;
-
-    const createBullet = (x, y, velocityX, velocityY) => {
-        const b = this.bullets.get(x, y);
-        if(!b) return;
-
-        b.setActive(true).setVisible(true);
-        b.setScale(0.18);
-        b.body.enable = true;
-        b.body.setSize(6,14,true);
-        b.setVelocity(velocityX, velocityY);
-
-        if(b.postFX){
-            b.postFX.clear();
-            b.postFX.addGlow(0xffff00,1);
-        }
-    };
-
-    // Normal shot
-    createBullet(this.player.x, this.player.y - 18, 0, -520);
-
-    // Triple fire
-    if(this.isTripleFire){
-
-        createBullet(this.player.x, this.player.y - 18, -200, -520);
-        createBullet(this.player.x, this.player.y - 18, 200, -520);
+    // Returned bullets are disabled, not destroyed, so the max-40 pool
+    // can be reused indefinitely instead of silently running out.
+    recycleBullet(bullet){
+        if (bullet?.active && bullet.body) bullet.disableBody(true, true);
     }
-}
+
+    shoot(){
+        // Normal level transitions prevent firing, but MegaBoss doesn't.
+        if ((this.levelPaused && !this.bossActive) || this.isGamePaused || this.isGameOver) return;
+
+        const createBullet = (x, y, velocityX, velocityY) => {
+            const bullet = this.bullets.get(x, y, "bullet");
+            if (!bullet) return;
+
+            // enableBody repositions/re-enables pooled sprites reliably.
+            bullet.enableBody(true, x, y, true, true);
+            bullet.setDisplaySize(10, 24); // consistent size regardless of PNG dimensions
+            bullet.setDepth(this.LAYERS.PLAYER + 1);
+            bullet.body.setAllowGravity(false);
+            bullet.body.setSize(bullet.width * 0.6, bullet.height * 0.75, true);
+            bullet.setVelocity(velocityX, velocityY);
+            bullet.postFX?.clear();
+            bullet.postFX?.addGlow(0xffff00, 1.2);
+        };
+
+        createBullet(this.player.x, this.player.y - 18, 0, -520);
+        if (this.isTripleFire) {
+            createBullet(this.player.x - 12, this.player.y - 18, -200, -520);
+            createBullet(this.player.x + 12, this.player.y - 18, 200, -520);
+        }
+    }
 
     update(){
+        if (this.isGamePaused || this.isGameOver) return;
 
-       if(this.megaBoss && !this.megaBoss.active){
-        console.log("MegaBoss became inactive unexpectedly");
-    }
-        
-        if(this.isGamePaused) return;
-        
-        if (
-        !this.levelPaused &&
-        !this.bossActive &&
-        this.zombiesSpawned >= this.killsToAdvance &&
-        this.zombies.countActive(true) === 0
-    ) {
-        this.nextLevel();
-    }
+        if (this.megaBoss && !this.megaBoss.active) {
+            // Guard against unexpected deactivation; never spawn ghost shards.
+            console.error("MegaBoss unexpectedly inactive; ending boss fight safely.");
+            this.killMegaBoss();
+            return;
+        }
+
+        if (!this.levelPaused && !this.bossActive &&
+            this.zombiesSpawned >= this.killsToAdvance &&
+            this.zombies.countActive(true) === 0) {
+            this.nextLevel();
+        }
 
         this.player.setVelocity(0);
-
-        if(this.cursors.left.isDown || this.keys.A.isDown)
+        if (this.cursors.left.isDown || this.keys.A.isDown)
             this.player.setVelocityX(-this.playerSpeed);
-    
-        if(this.cursors.right.isDown || this.keys.D.isDown)
+        if (this.cursors.right.isDown || this.keys.D.isDown)
             this.player.setVelocityX(this.playerSpeed);
-
-        if(this.cursors.up.isDown || this.keys.W.isDown)
+        if (this.cursors.up.isDown || this.keys.W.isDown)
             this.player.setVelocityY(-this.playerSpeed);
-
-        if(this.cursors.down.isDown || this.keys.S.isDown)
+        if (this.cursors.down.isDown || this.keys.S.isDown)
             this.player.setVelocityY(this.playerSpeed);
+        if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.shoot();
 
-        if(Phaser.Input.Keyboard.JustDown(this.keys.SPACE))
-            this.shoot();
-
-        this.spikes.children.each(shard => {
-        if(shard.y > 650 || shard.x < -50 || shard.x > 850){
-        shard.destroy();
+        // Iterate snapshots because destroy() mutates group membership.
+        for (const shard of [...this.spikes.getChildren()]) {
+            if (shard.active && (shard.y > 650 || shard.x < -50 || shard.x > 850))
+                shard.destroy();
         }
-    });
-
-        this.zombies.children.each(z => {
-            if(z.isMegaBoss) return;
-
-            if(z.y > 620){
-                z.destroy();
+        for (const zombie of [...this.zombies.getChildren()]) {
+            if (zombie.active && zombie.y > 620) {
+                zombie.destroy();
                 this.loseLife();
-        }
-    });
-
-        // Bullet cleanup (POOL FIX)
-        this.bullets.children.each(b => {
-            if (b.active && b.y < -20) {
-                b.setActive(false);
-                b.setVisible(false);
-                b.body.enable = false;
             }
-        });
+        }
+        for (const bullet of this.bullets.getChildren()) {
+            if (bullet.active && (bullet.y < -30 || bullet.x < -30 || bullet.x > 830))
+                this.recycleBullet(bullet);
+        }
     }
+
 }
 new Phaser.Game({
     type: Phaser.AUTO,
@@ -1006,6 +1029,4 @@ new Phaser.Game({
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
 });
-
-
 
