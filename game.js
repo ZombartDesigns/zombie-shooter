@@ -1,7 +1,7 @@
 /*
  * Zombie Shooter — patched full MainScene / LoadingScene (31 Oct 2026)
  * Requires Phaser 3, the original assets/ folder, and #game-container.
- * Main fix: MegaBoss callback identifies boss by identity before recycling a bullet.
+ * MegaBoss fix retained; arrows now have brighter yellow glow and contrast.
  */
 
 class LoadingScene extends Phaser.Scene {
@@ -947,7 +947,11 @@ class LoadingScene extends Phaser.Scene {
     // Returned bullets are disabled, not destroyed, so the max-40 pool
     // can be reused indefinitely instead of silently running out.
     recycleBullet(bullet){
-        if (bullet?.active && bullet.body) bullet.disableBody(true, true);
+        if (!bullet?.active || !bullet.body) return;
+        // Return arrows to the pool cleanly; a reused arrow gets fresh effects.
+        bullet.disableBody(true, true);
+        bullet.clearTint();
+        bullet.postFX?.clear();
     }
 
     shoot(){
@@ -960,13 +964,23 @@ class LoadingScene extends Phaser.Scene {
 
             // enableBody repositions/re-enables pooled sprites reliably.
             bullet.enableBody(true, x, y, true, true);
-            bullet.setDisplaySize(10, 24); // consistent size regardless of PNG dimensions
-            bullet.setDepth(this.LAYERS.PLAYER + 1);
+
+            // High-contrast arrows: modestly bigger, bright gold tint and
+            // strong yellow outer glow (WebGL renderer).
+            // setDisplaySize avoids huge arrows with large PNG source files.
+            bullet.setDisplaySize(14, 30);
+            bullet.setDepth(this.LAYERS.PLAYER + 2);
+            bullet.setTint(0xffff66);
+
             bullet.body.setAllowGravity(false);
             bullet.body.setSize(bullet.width * 0.6, bullet.height * 0.75, true);
             bullet.setVelocity(velocityX, velocityY);
-            bullet.postFX?.clear();
-            bullet.postFX?.addGlow(0xffff00, 1.2);
+
+            // The glow is recreated on reuse to avoid stacking effects.
+            if (bullet.postFX) {
+                bullet.postFX.clear();
+                bullet.postFX.addGlow(0xffee00, 4, 0, false, 0.35, 10);
+            }
         };
 
         createBullet(this.player.x, this.player.y - 18, 0, -520);
