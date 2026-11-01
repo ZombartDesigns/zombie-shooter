@@ -1,7 +1,7 @@
 /*
  * Zombie Shooter — patched full MainScene / LoadingScene (31 Oct 2026)
  * Requires Phaser 3, the original assets/ folder, and #game-container.
- * MegaBoss fix retained; arrows now have brighter yellow glow and contrast.
+ * MegaBoss fix retained; pooled, uniform golden arrows fix Triple Shot rendering lag.
  */
 
 class LoadingScene extends Phaser.Scene {
@@ -141,7 +141,6 @@ class LoadingScene extends Phaser.Scene {
         this.load.image("zombie", "assets/zombie.png");
         this.load.image("boss", "assets/boss.png");
         this.load.image("megaboss", "assets/megaboss.png");
-        this.load.image("bullet", "assets/bullet.png");
         this.load.image("heart", "assets/heart.png");
         this.load.image("blood", "assets/blood.png");
         this.load.image("shard", "assets/shard.png");
@@ -289,7 +288,27 @@ class LoadingScene extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
         this.keys = this.input.keyboard.addKeys("W,A,S,D,SPACE");
 
-        this.bullets = this.physics.add.group({ defaultKey:"bullet", maxSize:40 });
+        // Uniform, cached arrow art replaces the oversized source PNG plus
+        // per-bullet postFX passes that caused frame drops in Triple Shot.
+        this.createUniformArrowTexture();
+        this.bullets = this.physics.add.group({
+            defaultKey: "uniformArrowGold",
+            maxSize: 40,
+            runChildUpdate: false
+        });
+        this.lastShotAt = -1000;
+
+        // Allocate the 40 reusable bullet bodies just once. During gameplay
+        // no new arrow sprites, textures or GPU effects are created.
+        for (let i = 0; i < 40; i++) {
+            const arrow = this.bullets.create(-100, -100, "uniformArrowGold");
+            arrow.setDisplaySize(26, 48);
+            arrow.setDepth(this.LAYERS.PLAYER + 2);
+            arrow.body.setAllowGravity(false);
+            arrow.body.setSize(13, 32, true);
+            arrow.disableBody(true, true);
+        }
+
         this.zombies = this.physics.add.group();
         this.powerups = this.physics.add.group();
 
@@ -641,15 +660,14 @@ class LoadingScene extends Phaser.Scene {
         item.setScale(0.04);
         item.setDepth(this.LAYERS.ZOMBIE);
 
-        // Glow
-        if(type==="speedItem")
-            item.postFX.addGlow(0xffffff,2);
-
-        if(type==="multiItem")
-            item.postFX.addGlow(0xff8800,2);
-
-        if(type==="bladeItem")
-            item.postFX.addGlow(0x00ff00,2);
+        // GPU-friendly colour cue; no additional postFX render pass for
+        // bonus items. Triple Shot used to trigger noticeable lag.
+        const itemTint = {
+            speedItem: 0xffffff,
+            multiItem: 0xffbf40,
+            bladeItem: 0x88ff88
+        };
+        item.setTint(itemTint[type]);
         }
 
     togglePause(){
@@ -944,49 +962,73 @@ class LoadingScene extends Phaser.Scene {
  
     }
     
-    // Returned bullets are disabled, not destroyed, so the max-40 pool
-    // can be reused indefinitely instead of silently running out.
+    // Draw once, then reuse exactly the same illuminated arrow texture for
+    // both the single shot and all three projectiles in the Triple Shot buff.
+    // Using baked-in highlights instead of postFX gives consistent colour,
+    // identical size and much cheaper rendering on low-powered devices.
+    createUniformArrowTexture(){
+        const key = "uniformArrowGold";
+        if (this.textures.exists(key)) return;
+
+        const g = this.add.graphics();
+
+        // Warm, soft baked-in halo surrounding the shaft and arrowhead.
+        g.fillStyle(0xff9900, 0.12);
+        g.fillTriangle(16, 0, 1, 25, 31, 25);
+        g.fillRoundedRect(6, 20, 20, 31, 6);
+
+        g.fillStyle(0xffbd00, 0.25);
+        g.fillTriangle(16, 2, 4, 24, 28, 24);
+        g.fillRoundedRect(9, 19, 14, 30, 4);
+
+        // Bold dark border increases contrast on light backgrounds too.
+        g.fillStyle(0x4a2100, 0.95);
+        g.fillTriangle(16, 4, 6, 22, 26, 22);
+        g.fillRoundedRect(10, 19, 12, 29, 2);
+
+        // Golden outer arrow and bright centre.
+        g.fillStyle(0xffaa00, 1);
+        g.fillTriangle(16, 5, 7, 21, 25, 21);
+        g.fillRoundedRect(11, 19, 10, 28, 2);
+
+        g.fillStyle(0xffed48, 1);
+        g.fillTriangle(16, 8, 10, 19, 22, 19);
+        g.fillRoundedRect(13, 20, 6, 25, 1);
+
+        g.fillStyle(0xffffff, 0.92);
+        g.fillTriangle(16, 11, 14, 17, 18, 17);
+        g.fillRect(15, 21, 2, 21);
+
+        g.generateTexture(key, 32, 54);
+        g.destroy();
+    }
+
+    // Bullet pooling: no destruct/recreate and no effect clearing every hit.
     recycleBullet(bullet){
         if (!bullet?.active || !bullet.body) return;
-        // Return arrows to the pool cleanly; a reused arrow gets fresh effects.
         bullet.disableBody(true, true);
-        bullet.clearTint();
-        bullet.postFX?.clear();
     }
 
     shoot(){
-        // Normal level transitions prevent firing, but MegaBoss doesn't.
+        // MegaBoss fights allow shooting, but regular transitions do not.
         if ((this.levelPaused && !this.bossActive) || this.isGamePaused || this.isGameOver) return;
 
-        const createBullet = (x, y, velocityX, velocityY) => {
-            const bullet = this.bullets.get(x, y, "bullet");
-            if (!bullet) return;
+        // Prevent an excessive number of collisions if SPACE is rapidly tapped.
+        if (this.time.now - this.lastShotAt < 125) return;
+        this.lastShotAt = this.time.now;
 
-            // enableBody repositions/re-enables pooled sprites reliably.
+        const fire = (x, y, velocityX, velocityY) => {
+            const bullet = this.bullets.get(x, y);
+            if (!bullet) return; // Can only occur if all 40 are in flight.
             bullet.enableBody(true, x, y, true, true);
-
-            // High-contrast arrows: increased to 18x38, bright gold tint and
-            // strong yellow outer glow (WebGL renderer).
-            // setDisplaySize avoids huge arrows with large PNG source files.
-            bullet.setDisplaySize(18, 38);
-            bullet.setDepth(this.LAYERS.PLAYER + 2);
-            bullet.setTint(0xffff66);
-
-            bullet.body.setAllowGravity(false);
-            bullet.body.setSize(bullet.width * 0.6, bullet.height * 0.75, true);
             bullet.setVelocity(velocityX, velocityY);
-
-            // The glow is recreated on reuse to avoid stacking effects.
-            if (bullet.postFX) {
-                bullet.postFX.clear();
-                bullet.postFX.addGlow(0xffee00, 4, 0, false, 0.35, 10);
-            }
         };
 
-        createBullet(this.player.x, this.player.y - 18, 0, -520);
+        fire(this.player.x, this.player.y - 22, 0, -520);
         if (this.isTripleFire) {
-            createBullet(this.player.x - 20, this.player.y - 18, -200, -520);
-            createBullet(this.player.x + 20, this.player.y - 18, 200, -520);
+            // Equal-sized, identically coloured arrows with clear spacing.
+            fire(this.player.x - 20, this.player.y - 22, -180, -520);
+            fire(this.player.x + 20, this.player.y - 22, 180, -520);
         }
     }
 
@@ -1042,4 +1084,4 @@ new Phaser.Game({
     parent:"game-container",
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
-})
+});
