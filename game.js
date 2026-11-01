@@ -965,10 +965,10 @@ class LoadingScene extends Phaser.Scene {
             // enableBody repositions/re-enables pooled sprites reliably.
             bullet.enableBody(true, x, y, true, true);
 
-            // High-contrast arrows: modestly bigger, bright gold tint and
+            // High-contrast arrows: increased to 18x38, bright gold tint and
             // strong yellow outer glow (WebGL renderer).
             // setDisplaySize avoids huge arrows with large PNG source files.
-            bullet.setDisplaySize(14, 30);
+            bullet.setDisplaySize(18, 38);
             bullet.setDepth(this.LAYERS.PLAYER + 2);
             bullet.setTint(0xffff66);
 
@@ -985,8 +985,8 @@ class LoadingScene extends Phaser.Scene {
 
         createBullet(this.player.x, this.player.y - 18, 0, -520);
         if (this.isTripleFire) {
-            createBullet(this.player.x - 12, this.player.y - 18, -200, -520);
-            createBullet(this.player.x + 12, this.player.y - 18, 200, -520);
+            createBullet(this.player.x - 20, this.player.y - 18, -200, -520);
+            createBullet(this.player.x + 20, this.player.y - 18, 200, -520);
         }
     }
 
@@ -1042,5 +1042,4 @@ new Phaser.Game({
     parent:"game-container",
     physics:{ default:"arcade", arcade:{debug:false}},
     scene: [LoadingScene, MainScene]
-});
-
+})
